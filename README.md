@@ -18,7 +18,9 @@ pip install .
 
 ## Quick Start
 
-See [docs/README.md](docs/README.md) for detailed documentation, examples, and API reference.
+See the full documentation, examples, and API reference on GitHub:
+
+https://github.com/BrandonBahret/PyperCache/tree/master/docs
 
 ## Features
 
