@@ -8,14 +8,16 @@ This module provides a light-weight decorator that:
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypeVar
 
 from ..utils.patterns import ClassRepository
 from ..query.json_injester import JsonInjester
 from ..utils.typing_cast import instantiate_type
 
 
-def apimodel(cls: type) -> type:
+T = TypeVar("T")
+
+def apimodel(cls: T) -> T:
     """Decorator that makes a simple model from annotated fields.
 
     The generated constructor accepts a single positional ``data`` dict.

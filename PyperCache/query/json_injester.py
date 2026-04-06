@@ -9,31 +9,6 @@ from lark import Lark, Transformer
 from ..utils.sentinel import UNSET
 from ..utils.typing_cast import instantiate_type
 
-# # ---------------------------------------------------------------------------
-# # Sentinel
-# # ---------------------------------------------------------------------------
-
-# class UNSET:
-#     """Sentinel type representing a missing or unresolved value.
-
-#     Used instead of None so that None can be a legitimate return value
-#     from a query.
-#     """
-
-#     _instance: Optional[UNSET] = None
-
-#     def __new__(cls) -> UNSET:
-#         # Singleton — there is only ever one UNSET instance.
-#         if cls._instance is None:
-#             cls._instance = super().__new__(cls)
-#         return cls._instance
-
-#     def __repr__(self) -> str:
-#         return "JsonInjest.UNSET"
-
-
-# # Convenience singleton so callers can write `is UNSET` rather than `== UNSET`.
-# UNSET = UNSET()
 
 T = TypeVar("T")
 
