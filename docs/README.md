@@ -31,15 +31,15 @@
 ## Requirements
 
 - Python 3.10 or newer
-- `lark` — required for `JsonInjester` query parsing
+- Runtime dependencies are installed automatically when you install the package from PyPI.
 
-Install the runtime dependency:
+Install from PyPI:
 
 ```bash
-pip install lark
+pip install pypercache
 ```
 
-For development (includes `lark` and `pytest`):
+For development, install dev dependencies:
 
 ```bash
 pip install -r requirements-dev.txt

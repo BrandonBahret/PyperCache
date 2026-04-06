@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyperCache"
+version = "0.1.0"
+description = "Durable file-backed caching for JSON-like data with pluggable storage backends"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+authors = [
+    {name = "Brandon Bahret", email = "your.email@example.com"},
+]
+maintainers = [
+    {name = "Brandon Bahret", email = "your.email@example.com"},
+]
+keywords = ["cache", "persistence", "json", "pickle", "sqlite", "storage"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
+]
+dependencies = [
+    "lark>=1.1.0",
+    "jsonpickle>=3.0.0",
+    "msgpack>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/BrandonBahret/PyperCache"
+Documentation = "https://github.com/BrandonBahret/PyperCache#readme"
+Repository = "https://github.com/BrandonBahret/PyperCache"
+Issues = "https://github.com/BrandonBahret/PyperCache/issues"
+Changelog = "https://github.com/BrandonBahret/PyperCache/blob/master/CHANGELOG.md"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["PyperCache*"]
+
+[tool.setuptools.package-data]
+PyperCache = ["py.typed"]

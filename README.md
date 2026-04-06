@@ -5,7 +5,15 @@ A Python library providing durable file-backed caching for JSON-like data with p
 ## Installation
 
 ```bash
-pip install lark
+pip install pypercache
+```
+
+Or install from source:
+
+```bash
+git clone https://github.com/BrandonBahret/PyperCache.git
+cd PyperCache
+pip install .
 ```
 
 ## Quick Start
