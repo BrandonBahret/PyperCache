@@ -15,7 +15,7 @@ from PyperCache.core.cache import Cache
 from PyperCache.core.cache_record import CacheRecord
 from PyperCache.core.request_logger import LogRecord, RequestLogger
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "Cache",
