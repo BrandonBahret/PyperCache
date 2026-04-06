@@ -38,7 +38,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/BrandonBahret/PyperCache"
-Documentation = "https://github.com/BrandonBahret/PyperCache#readme"
+Documentation = "https://github.com/BrandonBahret/PyperCache/tree/master/docs"
+Source = "https://github.com/BrandonBahret/PyperCache"
 Repository = "https://github.com/BrandonBahret/PyperCache"
 Issues = "https://github.com/BrandonBahret/PyperCache/issues"
 Changelog = "https://github.com/BrandonBahret/PyperCache/blob/master/CHANGELOG.md"

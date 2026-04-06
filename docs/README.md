@@ -39,6 +39,10 @@ Install from PyPI:
 pip install pypercache
 ```
 
+Read the full documentation on GitHub:
+
+https://github.com/BrandonBahret/PyperCache/tree/master/docs
+
 For development, install dev dependencies:
 
 ```bash
