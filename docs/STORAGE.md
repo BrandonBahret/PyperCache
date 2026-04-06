@@ -165,6 +165,131 @@ Public methods (`load`, `save`, `get_record`, `store_record`, `update_record`, `
 
 ---
 
+## Creating a New Storage Backend
+
+To add a new storage strategy (e.g., for a custom file format or database), follow these steps:
+
+### 1. Implement the StorageMechanism Abstract Base Class
+
+Create a new class in `PyperCache/storage/` that inherits from `StorageMechanism` and implements all abstract methods:
+
+```python
+from pathlib import Path
+from typing import Dict
+from PyperCache.storage.base import StorageMechanism
+
+class MyCustomStorage(StorageMechanism):
+    """Storage backend for [describe your format/database]."""
+
+    def _impl__touch_store(self, filepath: Path) -> bool:
+        """Create an empty store at filepath if it doesn't exist."""
+        # Create the file/database/table/etc.
+        # Return True on success, False on failure
+        pass
+
+    def _impl__load(self, filepath: Path) -> MutableMapping[str, dict]:
+        """Load all records from disk into a MutableMapping."""
+        # Deserialize and return the data structure
+        # Can return dict or any MutableMapping implementation
+        pass
+
+    def _impl__save(self, cache_records_dict: Dict[str, dict], filepath: Path):
+        """Serialize and save the entire records dict to disk."""
+        # Write the data to persistent storage
+        pass
+
+    def _impl__update_record(self, key: str, data: dict):
+        """Merge data into existing record and persist the change."""
+        # Update just this key's data without full save if possible
+        pass
+
+    def _impl__erase_everything(self):
+        """Remove all records from the backing store."""
+        # Clear the persistent storage
+        pass
+```
+
+### 2. Register Your Backend in the Factory
+
+Add your new extension and class to the `_EXTENSION_TO_STORAGE` mapping in `PyperCache/storage/factory.py`:
+
+```python
+_EXTENSION_TO_STORAGE: Dict[str, Type[StorageMechanism]] = {
+    ".manifest": ChunkedStorage,
+    ".json":     JSONStorage,
+    ".pkl":      PickleStorage,
+    ".db":       SQLiteStorage,
+    ".myformat": MyCustomStorage,  # Add your new backend
+}
+```
+
+### 3. Add Tests
+
+Create a test file in `tests/` following the pattern of existing backend tests (see `test_storage.py`). Test all operations and edge cases.
+
+### 4. Update Documentation
+
+Add your new backend to the table in the "Choosing a backend" section above, describing when to use it.
+
+### Example: YAML Storage Backend
+
+Here's a complete example implementing YAML storage:
+
+```python
+import yaml
+from pathlib import Path
+from typing import Dict
+from PyperCache.storage.base import StorageMechanism
+
+class YAMLStorage(StorageMechanism):
+    """Storage backend using YAML format for human-readable caching."""
+
+    def _impl__touch_store(self, filepath: Path) -> bool:
+        filepath.touch(exist_ok=True)
+        return True
+
+    def _impl__load(self, filepath: Path) -> Dict[str, dict]:
+        with open(filepath, "r") as f:
+            content = f.read().strip()
+        return yaml.safe_load(content) if content else {}
+
+    def _impl__save(self, cache_records_dict: Dict[str, dict], filepath: Path):
+        with open(filepath, "w") as f:
+            yaml.dump(cache_records_dict, f, default_flow_style=False)
+
+    def _impl__update_record(self, key: str, data: dict):
+        record = self.get_record(key)
+        record.update(data)
+        self.save(self.records)
+
+    def _impl__erase_everything(self):
+        self.records = {}
+        self.save(self.records)
+```
+
+Then register it:
+
+```python
+# In factory.py
+_EXTENSION_TO_STORAGE[".yaml"] = YAMLStorage
+```
+
+Now you can use it:
+
+```python
+cache = Cache(filepath="my_cache.yaml")  # Uses YAMLStorage
+```
+
+### Key Considerations
+
+- **Thread Safety**: The base class handles locking, so your implementations don't need to worry about concurrency.
+- **Performance**: For large caches, consider lazy loading or incremental updates in `_impl__update_record`.
+- **Data Types**: Ensure your serialization handles all Python data types that might be cached.
+- **Error Handling**: Implementations should be robust to file corruption, permissions issues, etc.
+- **Atomicity**: For databases, use transactions; for files, consider temporary files and atomic moves.
+
+---
+
 ## RequestLogger
 
 `RequestLogger` maintains an append-only log of API request metadata (URI and HTTP status code), completely separate from the cache. Use it alongside `Cache` when you want an operational audit trail.
