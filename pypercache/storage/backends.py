@@ -6,9 +6,9 @@ from collections.abc import MutableMapping
 from pathlib import Path
 from typing import Dict
 
-from PyperCache.storage.base import StorageMechanism
-from PyperCache.storage.chunked_dictionary import ChunkedDictionary
-from PyperCache.utils.serialization import PickleStore
+from .base import StorageMechanism
+from .chunked_dictionary import ChunkedDictionary
+from ..utils.serialization import PickleStore
 
 
 class JSONStorage(StorageMechanism):

@@ -4,10 +4,10 @@ import math
 import time
 from typing import Any, Optional
 
-from PyperCache.core.cache_record import CacheRecord
-from PyperCache.storage.factory import get_storage_mechanism
-from PyperCache.utils.patterns import ClassRepository
-from PyperCache.utils.sentinel import UNSET
+from .cache_record import CacheRecord
+from ..storage.factory import get_storage_mechanism
+from ..utils.patterns import ClassRepository
+from ..utils.sentinel import UNSET
 
 
 CACHE_FILE = 'api-cache.pkl'

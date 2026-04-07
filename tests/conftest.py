@@ -12,6 +12,7 @@ import pytest
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from pypercache import Cache
 
 # ---------------------------------------------------------------------------
 # Temporary file helpers
@@ -50,7 +51,6 @@ def tmp_manifest_dir(tmp_path):
 @pytest.fixture
 def pkl_cache(tmp_pkl):
     """A Cache backed by a fresh PickleStorage with two records pre-stored."""
-    from PyperCache import Cache
     cache = Cache(filepath=tmp_pkl)
     cache.store("fresh_key", {"value": 42}, expiry=3600)
     cache.store("stale_key", {"value": 99}, expiry=0)

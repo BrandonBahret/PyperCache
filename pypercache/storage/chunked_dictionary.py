@@ -25,8 +25,8 @@ from functools import cached_property as lazy_property
 from pathlib import Path
 from typing import Any, Dict, Generator, Iterator, List, Optional
 
-from PyperCache.utils.fs import ensure_dirs_exist
-from PyperCache.utils.serialization import PickleStore
+from ..utils.fs import ensure_dirs_exist
+from ..utils.serialization import PickleStore
 
 # Private sentinel: distinguishes "no default supplied" from None in get().
 _UNSET = object()

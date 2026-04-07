@@ -42,18 +42,18 @@ RequestLogger(filepath="…")          independent of Cache
 
 | Module | Responsibility | Go here when… |
 |--------|---------------|---------------|
-| `PyperCache.core` | `Cache`, `CacheRecord`, `RequestLogger`, `LogRecord` | You use the main API or request logs. |
-| `PyperCache.query` | `JsonInjester` | You need query parsing or use `JsonInjester` directly. |
-| `PyperCache.storage` | Backends and `get_storage_mechanism` | You inspect or extend how paths map to storage. |
-| `PyperCache.utils` | Serialization, patterns, filesystem helpers | You reuse serializers, the class registry, or FS helpers. |
+| `pypercache.core` | `Cache`, `CacheRecord`, `RequestLogger`, `LogRecord` | You use the main API or request logs. |
+| `pypercache.query` | `JsonInjester` | You need query parsing or use `JsonInjester` directly. |
+| `pypercache.storage` | Backends and `get_storage_mechanism` | You inspect or extend how paths map to storage. |
+| `pypercache.utils` | Serialization, patterns, filesystem helpers | You reuse serializers, the class registry, or FS helpers. |
 
 Primary exports:
 
 ```python
-from PyperCache import Cache, CacheRecord, LogRecord, RequestLogger
-from PyperCache.query import JsonInjester
-from PyperCache.storage import get_storage_mechanism
-from PyperCache.utils import DataSerializer, PickleStore
+from pypercache import Cache, CacheRecord, LogRecord, RequestLogger
+from pypercache.query import JsonInjester
+from pypercache.storage import get_storage_mechanism
+from pypercache.utils import DataSerializer, PickleStore
 ```
 
 ---
@@ -103,7 +103,7 @@ Backend internals, trade-offs, and extension.
 ### Fetch-or-cache
 
 ```python
-from PyperCache import Cache
+from pypercache import Cache
 
 cache = Cache(filepath="api-cache.pkl")   # .pkl / .json / .manifest / .db
 
@@ -117,7 +117,7 @@ data = cache.get(KEY).data
 ### Typed objects
 
 ```python
-from PyperCache import Cache
+from pypercache import Cache
 
 @Cache.cached
 class UserList:
@@ -143,7 +143,7 @@ q.has("meta.cursor")                          # existence check
 ### Request logging
 
 ```python
-from PyperCache import RequestLogger
+from pypercache import RequestLogger
 
 log = RequestLogger("api_requests.log")
 log.log(uri="/v1/resource", status=200)

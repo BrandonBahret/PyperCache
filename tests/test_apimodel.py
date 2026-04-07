@@ -1,6 +1,9 @@
-from PyperCache.models.apimodel import apimodel
-from PyperCache.utils.typing_cast import instantiate_type
-from PyperCache.core.cache import Cache
+from pathlib import Path
+import tempfile
+
+from pypercache.models.apimodel import apimodel
+from pypercache.utils.typing_cast import instantiate_type
+from pypercache.core.cache import Cache
 
 
 def test_apimodel_hydrates_and_registers():
@@ -12,7 +15,8 @@ def test_apimodel_hydrates_and_registers():
 
     data = {"id": 1, "name": "Alice", "email": "alice@example.com"}
 
-    cache = Cache(filepath=None)
+    tmp = tempfile.mkdtemp() / Path("test_cache.pkl")
+    cache = Cache(filepath=tmp)
     cache.store("u:1", data, cast=User)
 
     obj = cache.get_object("u:1")

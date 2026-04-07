@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 import json
 
-from PyperCache.utils.fs import ensure_dirs_exist
+from ..utils.fs import ensure_dirs_exist
 
 
 LOG_FILENAME = "api_logfile.log"

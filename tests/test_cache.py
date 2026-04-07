@@ -6,9 +6,10 @@ import time
 
 import pytest
 
-from PyperCache import Cache
-from PyperCache.utils.patterns import ClassRepository
-from PyperCache.utils.sentinel import UNSET
+from pypercache import Cache
+from pypercache.storage.backends import JSONStorage, PickleStorage
+from pypercache.utils.patterns import ClassRepository
+from pypercache.utils.sentinel import UNSET
 
 
 # ---------------------------------------------------------------------------
@@ -175,12 +176,10 @@ class TestPersistence:
 class TestStorageDispatch:
 
     def test_pkl_extension_uses_pickle_storage(self, tmp_pkl):
-        from PyperCache.storage.backends import PickleStorage
         cache = Cache(filepath=tmp_pkl)
         assert isinstance(cache.storage, PickleStorage)
 
     def test_json_extension_uses_json_storage(self, tmp_json):
-        from PyperCache.storage.backends import JSONStorage
         cache = Cache(filepath=tmp_json)
         assert isinstance(cache.storage, JSONStorage)
 

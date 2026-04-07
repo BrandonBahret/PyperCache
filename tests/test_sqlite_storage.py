@@ -18,8 +18,8 @@ from pathlib import Path
 
 import pytest
 
-from PyperCache import CacheRecord
-from PyperCache.storage.sqlite_storage import (
+from pypercache import CacheRecord
+from pypercache.storage.sqlite_storage import (
     SQLiteStorage,
     _BufferedMapping,
     _serialize_data,

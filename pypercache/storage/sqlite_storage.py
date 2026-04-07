@@ -56,8 +56,8 @@ from collections.abc import MutableMapping
 from pathlib import Path
 from typing import Dict, Iterator, Optional, Set
 
-from PyperCache.storage.base import StorageMechanism
-from PyperCache.utils.fs import ensure_dirs_exist
+from .base import StorageMechanism
+from ..utils.fs import ensure_dirs_exist
 
 
 # ---------------------------------------------------------------------------

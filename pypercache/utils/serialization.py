@@ -7,7 +7,7 @@ import zlib
 from pathlib import Path
 from typing import Any, Dict
 
-from PyperCache.utils.fs import ensure_dirs_exist
+from .fs import ensure_dirs_exist
 
 
 class PickleStore:

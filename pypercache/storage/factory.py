@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import Dict, Type
 
-from PyperCache.storage.base import StorageMechanism
-from PyperCache.storage.backends import ChunkedStorage, JSONStorage, PickleStorage
-from PyperCache.storage.sqlite_storage import SQLiteStorage
+from .base import StorageMechanism
+from .backends import ChunkedStorage, JSONStorage, PickleStorage
+from .sqlite_storage import SQLiteStorage
 
 
 # Maps file extensions to their corresponding storage backend class.

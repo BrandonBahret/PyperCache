@@ -54,7 +54,7 @@ Splits records across multiple chunk files on disk. A manifest file (the path pa
 cache = Cache(filepath="my_store/chunks.manifest")
 ```
 
-The manifest file and its chunk files reside in the same directory. The backing class is `ChunkedDictionary` in `PyperCache.storage`.
+The manifest file and its chunk files reside in the same directory. The backing class is `ChunkedDictionary` in `pypercache.storage`.
 
 Use this backend when the cache has many keys or large payloads and a full-file rewrite on every write is unacceptable.
 
@@ -90,7 +90,7 @@ All records are loaded into memory on open. `get_record()` is a pure O(1) dict l
 - `store.close()` or context-manager `__exit__` is called
 
 ```python
-from PyperCache.storage.sqlite_storage import SQLiteStorage
+from pypercache.storage.sqlite_storage import SQLiteStorage
 
 with SQLiteStorage("responses.db") as store:
     # close() flushes and checkpoints WAL on exit
@@ -124,7 +124,7 @@ A process crash between flushes can lose at most `FLUSH_INTERVAL_SECONDS` (defau
 #### Tunable constants
 
 ```python
-from PyperCache.storage.sqlite_storage import SQLiteStorage
+from pypercache.storage.sqlite_storage import SQLiteStorage
 
 store = SQLiteStorage("responses.db", flush_interval=1.0, dirty_threshold=10)
 ```
@@ -138,7 +138,7 @@ store = SQLiteStorage("responses.db", flush_interval=1.0, dirty_threshold=10)
 
 ## StorageMechanism — the abstract base
 
-All four backends extend `StorageMechanism` (`PyperCache.storage.base`). Public methods (`load`, `save`, `get_record`, `store_record`, `update_record`, `erase_everything`) acquire a threading lock before delegating to the `_impl__*` abstract hooks.
+All four backends extend `StorageMechanism` (`pypercache.storage.base`). Public methods (`load`, `save`, `get_record`, `store_record`, `update_record`, `erase_everything`) acquire a threading lock before delegating to the `_impl__*` abstract hooks.
 
 | Abstract method | Responsibility |
 |----------------|---------------|
@@ -159,7 +159,7 @@ Create a new class in `PyperCache/storage/` that inherits from `StorageMechanism
 ```python
 from pathlib import Path
 from typing import MutableMapping
-from PyperCache.storage.base import StorageMechanism
+from pypercache.storage.base import StorageMechanism
 
 class MyCustomStorage(StorageMechanism):
 
@@ -209,7 +209,7 @@ Follow the pattern of existing backend tests in `tests/test_storage.py`. Add you
 ```python
 import yaml
 from pathlib import Path
-from PyperCache.storage.base import StorageMechanism
+from pypercache.storage.base import StorageMechanism
 
 class YAMLStorage(StorageMechanism):
 
@@ -250,7 +250,7 @@ cache = Cache(filepath="my_cache.yaml")
 `RequestLogger` maintains an append-only JSONL log of request metadata (URI and HTTP status code), independent of the cache. Use it alongside `Cache` when you need an operational audit trail.
 
 ```python
-from PyperCache import RequestLogger
+from pypercache import RequestLogger
 
 log = RequestLogger(filepath="api_requests.log")
 ```
@@ -296,7 +296,7 @@ The log file is JSONL (one JSON object per line). If `RequestLogger` encounters 
 ### Usage alongside Cache
 
 ```python
-from PyperCache import Cache, RequestLogger
+from pypercache import Cache, RequestLogger
 
 cache = Cache(filepath="api-bodies.json")
 log   = RequestLogger("api_requests.log")

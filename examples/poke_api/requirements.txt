@@ -1,0 +1,3 @@
+# Runtime dependencies for the PokeAPI wrapper + demo app
+pypercache>=0.1.3   # persistent file-backed cache with TTL and typed hydration
+requests>=2.31.0    # HTTP client for PokeAPI calls

@@ -5,8 +5,9 @@ import time
 
 import pytest
 
-from PyperCache.core.cache_record import CacheRecord, look_up_class, PRIMITIVE_TYPES_MAP
-from PyperCache.utils.sentinel import UNSET
+from pypercache.core.cache_record import CacheRecord, look_up_class, PRIMITIVE_TYPES_MAP
+from pypercache.utils.patterns import ClassRepository
+from pypercache.utils.sentinel import UNSET
 
 
 # ---------------------------------------------------------------------------
@@ -37,8 +38,6 @@ class TestLookUpClass:
         assert look_up_class(name) is expected
 
     def test_registered_class(self):
-        from PyperCache.utils.patterns import ClassRepository
-
         class _LookupTarget:
             pass
 

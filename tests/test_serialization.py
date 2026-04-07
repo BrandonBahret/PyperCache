@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from PyperCache.utils.serialization import DataSerializer, PickleStore
+from pypercache.utils.serialization import DataSerializer, PickleStore
 
 
 class TestPickleStore:

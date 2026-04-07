@@ -5,9 +5,9 @@ import math
 import time
 from typing import Callable, Optional
 
-from PyperCache.query import JsonInjester
-from PyperCache.utils.patterns import ClassRepository
-from PyperCache.utils.sentinel import UNSET
+from ..query import JsonInjester
+from ..utils.patterns import ClassRepository
+from ..utils.sentinel import UNSET
 
 
 # Maps primitive type name strings to their corresponding Python types.

@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PyperCache"
-version = "0.1.2"
+name = "pypercache"
+version = "0.1.4"
 description = "Durable file-backed caching for JSON-like data with pluggable storage backends"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -50,7 +50,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["PyperCache*"]
+include = ["pypercache*"]
 
 [tool.setuptools.package-data]
-PyperCache = ["py.typed"]
+pypercache = ["py.typed"]

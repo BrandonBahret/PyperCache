@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from PyperCache.core.request_logger import LogRecord, RequestLogger
+from pypercache.core.request_logger import LogRecord, RequestLogger
 
 
 # ---------------------------------------------------------------------------

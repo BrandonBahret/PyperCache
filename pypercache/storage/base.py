@@ -6,8 +6,8 @@ from collections.abc import MutableMapping
 from pathlib import Path
 from typing import Dict, Type
 
-from PyperCache.core.cache_record import CacheRecord
-from PyperCache.utils.fs import ensure_dirs_exist
+from ..core.cache_record import CacheRecord
+from ..utils.fs import ensure_dirs_exist
 
 
 class StorageMechanism(ABC):

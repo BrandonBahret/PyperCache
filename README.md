@@ -42,8 +42,8 @@ The snippet below demonstrates every major feature in one pass: choosing a backe
  
 ```python
 import math
-from PyperCache import Cache, RequestLogger
-from PyperCache.models.apimodel import apimodel
+from pypercache import Cache, RequestLogger
+from pypercache.models.apimodel import apimodel
  
 # ── 1. Backend is chosen by file extension ──────────────────────────────────
 cache = Cache(filepath="api-cache.db")   # .pkl / .json / .manifest / .db
@@ -71,14 +71,14 @@ if not cache.is_data_fresh(KEY):
     log.log(uri="/api/search?q=python", status=200)
  
 # ── 4. Retrieve a typed object ───────────────────────────────────────────────
-result = cache.get_object(KEY)          # SearchResult instance
-print(result.total)                     # 3
+result: SearchResult = cache.get_object(KEY)  # SearchResult instance
+print(result.total)                           # 3
  
 # ── 5. Query without mutating the payload ───────────────────────────────────
 q = cache.get(KEY).query
  
 print(q.get("total"))                           # 3
-print(q.get("hits?role=staff.name"))                 # [Alice, Carol]
+print(q.get("hits?role=staff.name"))            # [Alice, Carol]
 print(q.get("hits?name*"))                      # ['Alice', 'Bob', 'Carol']
 print(q.get("hits?role=staff", select_first=True)["name"])  # 'Alice'
  
@@ -108,7 +108,7 @@ q = cache.get("search:v1:python").query
 You can also instantiate it directly over any dict:
  
 ```python
-from PyperCache.query import JsonInjester
+from pypercache.query import JsonInjester
 q = JsonInjester({"meta": {"total": 5}, "hits": [...]})
 ```
  
@@ -189,7 +189,7 @@ q.get("meta?ghost", default_value=0)  # 0
 `select_first=True` unwraps the first element of a list result. Returns `UNSET` if the list is empty.
  
 ```python
-from PyperCache.query.json_injester import UNSET
+from pypercache.query.json_injester import UNSET
  
 first = q.get("hits?role=staff", select_first=True)
 print(first["name"])   # "Alice"

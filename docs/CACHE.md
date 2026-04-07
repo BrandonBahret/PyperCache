@@ -9,7 +9,7 @@
 ### Instantiation
 
 ```python
-from PyperCache import Cache
+from pypercache import Cache
 
 cache = Cache(filepath="api-cache.pkl")   # .pkl | .json | .manifest | .db
 ```
@@ -95,7 +95,7 @@ Permanently deletes all records from the backing store. There is no undo.
 A class decorator that registers a class in the shared `ClassRepository`. Once registered, its name is stored alongside a cache entry and resolved back to the class at retrieval time.
 
 ```python
-from PyperCache import Cache
+from pypercache import Cache
 
 @Cache.cached
 class SearchResult:
@@ -125,8 +125,8 @@ result = cache.get_object("search:v1:python")   # SearchResult instance
 A lightweight alternative to `@Cache.cached` for annotation-driven models. It registers the class, injects a constructor that accepts a raw `dict`, and provides `from_dict()` / `as_dict()` helpers.
 
 ```python
-from PyperCache import Cache
-from PyperCache.models.apimodel import apimodel
+from pypercache import Cache
+from pypercache.models.apimodel import apimodel
 
 @apimodel
 class User:
@@ -187,7 +187,7 @@ Returns a plain dict safe for serialization. `math.inf` is encoded as the string
 ## Lifecycle example
 
 ```python
-from PyperCache import Cache
+from pypercache import Cache
 
 @Cache.cached
 class OrgProfile:

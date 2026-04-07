@@ -1,7 +1,10 @@
 """Tests for PyperCache.utils.sentinel."""
 
 import pytest
-from PyperCache.utils.sentinel import UNSET, _UnsetType
+from pypercache.utils.sentinel import UNSET, _UnsetType
+from pypercache.utils.sentinel import UNSET as U1
+from pypercache.utils import UNSET as U2
+from pypercache.core.cache import UNSET as U3
 
 
 class TestUnsetSentinel:
@@ -18,9 +21,6 @@ class TestUnsetSentinel:
 
     def test_identity_across_import_paths(self):
         """UNSET imported via different paths resolves to the same object."""
-        from PyperCache.utils.sentinel import UNSET as U1
-        from PyperCache.utils import UNSET as U2
-        from PyperCache.core.cache import UNSET as U3
         assert U1 is U2 is U3
 
     def test_bool_is_false(self):

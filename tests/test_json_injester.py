@@ -2,7 +2,7 @@
 
 import json
 import pytest
-from PyperCache.query.json_injester import JsonInjester, UNSET
+from pypercache.query.json_injester import JsonInjester, UNSET
 
 
 SAMPLE = {

@@ -16,7 +16,7 @@ q = record.query   # built once on first access, reused thereafter
 **Directly:**
 
 ```python
-from PyperCache.query import JsonInjester
+from pypercache.query import JsonInjester
 
 q = JsonInjester({"meta": {"total": 5}, "hits": [...]})
 ```
@@ -53,7 +53,7 @@ q.get(selector, default_value=UNSET, select_first=False, cast=None)
 `UNSET` is the library's sentinel for "not found". Import it when you need to test for it explicitly:
 
 ```python
-from PyperCache.query.json_injester import UNSET
+from pypercache.query.json_injester import UNSET
 
 result = q.get("missing.path")
 print(result is UNSET)   # True
@@ -160,7 +160,7 @@ q.get("hits?team")   # all hit dicts that contain a "team" key
 ## `select_first` and `default_value`
 
 ```python
-from PyperCache.query.json_injester import UNSET
+from pypercache.query.json_injester import UNSET
 
 first_staff = q.get("hits?role=staff", select_first=True)
 print(first_staff["name"])   # 'Alice'
@@ -177,8 +177,8 @@ print(total)                 # 0
 ## Full example
 
 ```python
-from PyperCache import Cache
-from PyperCache.query.json_injester import UNSET
+from pypercache import Cache
+from pypercache.query.json_injester import UNSET
 
 cache = Cache(filepath="search-cache.json")
 key   = "search:v1:engineering+staff"

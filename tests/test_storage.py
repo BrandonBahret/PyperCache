@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from PyperCache.storage.backends import ChunkedStorage, JSONStorage, PickleStorage
-from PyperCache.storage.factory import get_storage_mechanism
-from PyperCache.storage.chunked_dictionary import ChunkedDictionary
+from pypercache.storage.backends import ChunkedStorage, JSONStorage, PickleStorage
+from pypercache.storage.factory import get_storage_mechanism
+from pypercache.storage.chunked_dictionary import ChunkedDictionary
 
 
 # ---------------------------------------------------------------------------
