@@ -1,125 +1,114 @@
 # Storage Backends & RequestLogger
 
-This document covers how to choose and configure a storage backend, how the SQLite backend works under the hood, and how to use `RequestLogger` for operational audit trails.
+This document covers backend selection, backend-specific behavior and trade-offs, how to implement a custom backend, and how to use `RequestLogger` for operational audit trails.
 
 ---
 
 ## Choosing a backend
 
-The backend is selected **automatically** from the file extension you pass to `Cache`. There is no other configuration needed — change the extension, change the backend. All four expose identical cache semantics (TTL, staleness, typed round-trips, `CacheRecord.query`).
+The backend is selected automatically from the file extension passed to `Cache`. No additional configuration is required — switching backends means changing the filename extension.
 
 ```python
-cache = Cache(filepath="api-cache.pkl")        # Pickle
-cache = Cache(filepath="debug-cache.json")     # JSON
+cache = Cache(filepath="api-cache.pkl")             # Pickle
+cache = Cache(filepath="debug-cache.json")          # JSON
 cache = Cache(filepath="my_store/chunks.manifest")  # Chunked manifest
-cache = Cache(filepath="responses.db")         # SQLite
+cache = Cache(filepath="responses.db")              # SQLite
 ```
+
+All four backends expose identical cache semantics: TTL, staleness, typed round-trips, and `CacheRecord.query`.
 
 | Extension | Backend | Best for |
 |-----------|---------|----------|
-| `.pkl` | Pickle | Default choice. Single file, preserves Python-native types. No external dependency. Good for prototyping and scripts. |
-| `.json` | JSON | Human-readable, diff-friendly. Rewrite the whole file on every save — keep small. Note: `set` values are stored as tuples; see [JSON caveats](#json-caveats) below. |
-| `.manifest` | Chunked | Large or growing caches. Per-key persistence — only the changed chunk is rewritten, not the whole dataset. A manifest file tracks which chunk holds each key. |
-| `.db` | SQLite | High-write workloads or concurrent access. Write-behind batching means many stores → one fsync. WAL mode keeps readers unblocked. |
+| `.pkl` | Pickle | Default choice. Single file, Python-native types, no external dependencies. Well-suited for prototyping and scripts. |
+| `.json` | JSON | Human-readable and diff-friendly. Rewrites the whole file on every save — keep caches small. |
+| `.manifest` | Chunked | Large or growing caches. Only the changed chunk is rewritten, not the whole dataset. |
+| `.db` | SQLite | High-write workloads or concurrent access. Write-behind batching and WAL mode. |
 
 ---
 
-## Pickle backend (`.pkl`)
+## Backend reference
 
-Single-file, Python-native serialization. Entire mapping is loaded into memory on open and written back as a whole on every `store`. No external dependencies beyond the standard library.
+### Pickle (`.pkl`)
 
-```python
-cache = Cache(filepath="scratch.pkl")
-```
+Single-file, Python-native serialization. The entire mapping is loaded into memory on open and written back as a whole on every `store()`. No external dependencies.
 
-Good default for notebooks, scripts, and anything where the total number of keys stays manageable. Not human-readable. Pickle data is Python-version and class-definition sensitive — don't rely on `.pkl` files as long-term portable archives.
+Appropriate for notebooks, scripts, and caches with a manageable number of keys. Not human-readable. Pickle data is sensitive to Python version and class definition changes — do not rely on `.pkl` files as long-term portable archives.
 
 ---
 
-## JSON backend (`.json`)
+### JSON (`.json`)
 
-Single-file, human-readable. The entire mapping is serialized as one JSON document on every save. Open it in an editor, diff it in version control, inspect it easily.
+Single-file, human-readable. The entire mapping is serialized as one JSON document on every save, making it easy to open in an editor or diff in version control.
 
-```python
-cache = Cache(filepath="debug-cache.json")
-```
+For complex Python objects that are not natively JSON-serializable (e.g. `set`), the backend falls back to `jsonpickle`, which may produce non-human-readable output. Use the `cast` parameter on `store()` to ensure correct deserialization of such values.
 
-### JSON caveats
-
-The JSON backend uses standard JSON for simple data, falling back to jsonpickle for complex Python objects (like sets). This ensures serialization safety but may produce non-human-readable JSON for complex types. Use the `cast` parameter on `store` to ensure proper deserialization.
-
-Avoid the JSON backend for caches that will grow large — every `store` call rewrites the entire file.
+Avoid this backend for caches that will grow large — every `store()` rewrites the entire file.
 
 ---
 
-## Chunked manifest backend (`.manifest`)
+### Chunked manifest (`.manifest`)
 
-Splits records across multiple chunk files on disk. A manifest file (the path you pass to `Cache`) records which chunk file holds each key. Only the chunk containing the modified key is rewritten on a `store` — there is no full-file rewrite.
+Splits records across multiple chunk files on disk. A manifest file (the path passed to `Cache`) tracks which chunk holds each key. Only the chunk containing the modified key is rewritten on `store()`.
 
 ```python
 cache = Cache(filepath="my_store/chunks.manifest")
 ```
 
-The manifest file and chunk files live in the same directory. The backing class is `ChunkedDictionary` in `PyperCache.storage`.
+The manifest file and its chunk files reside in the same directory. The backing class is `ChunkedDictionary` in `PyperCache.storage`.
 
-Use this when your cache has many keys or large payloads and you cannot afford to rewrite the whole dataset on every write. It is also the right choice when you want file-per-chunk granularity for backup or inspection purposes.
+Use this backend when the cache has many keys or large payloads and a full-file rewrite on every write is unacceptable.
 
 ---
 
-## SQLite backend (`.db`)
+### SQLite (`.db`)
 
-A single SQLite database file. Designed for high-write workloads with the best durability/throughput trade-off of all four backends.
+A single SQLite database file designed for high-write workloads.
 
 ```python
 cache = Cache(filepath="responses.db")
 ```
 
-### Schema
+#### Schema
 
-Each cache record occupies one row in a single `cache_records` table:
+Each cache entry occupies one row in the `cache_records` table:
 
-```
-key        TEXT PRIMARY KEY
-cast       TEXT          — type/cast metadata
-expiry     REAL          — expiry (seconds)
-timestamp  REAL          — Unix epoch of last write
-data       BLOB          — serialized payload
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| `key` | `TEXT PRIMARY KEY` | Cache key. |
+| `cast` | `TEXT` | Type / cast metadata. |
+| `expiry` | `REAL` | Expiry in seconds. |
+| `timestamp` | `REAL` | Unix epoch of last write. |
+| `data` | `BLOB` | Serialized payload. |
 
-### Write-behind buffer
+#### Write-behind buffer
 
-The dominant cost in a naive SQLite backend is per-write `fsync`. This backend eliminates it with a write-behind dirty buffer:
+All records are loaded into memory on open. `get_record()` is a pure O(1) dict lookup with zero disk IO. Writes go into an in-memory dirty buffer and are flushed in a single transaction (one `fsync`) when any of the following occurs:
 
-1. **Hot read cache** — all records are loaded into memory on open. `get_record` is a pure O(1) dict lookup with zero disk IO.
-2. **Dirty buffer** — `store_record` and `update_record` write into the in-memory dict and mark the key dirty. No disk IO until a flush is triggered.
-3. **Batch flush** — all dirty keys are persisted in a single transaction (one `fsync` regardless of how many records changed). A flush is triggered by any of:
-   - `DIRTY_FLUSH_THRESHOLD` dirty keys accumulated (default: 50)
-   - `FLUSH_INTERVAL_SECONDS` elapsed (default: 5 s) — handled by a background daemon thread
-   - Explicit `store.flush()` call
-   - `store.close()` or context-manager `__exit__`
+- `DIRTY_FLUSH_THRESHOLD` dirty keys accumulate (default: 50)
+- `FLUSH_INTERVAL_SECONDS` elapses (default: 5 s) — handled by a background daemon thread
+- `store.flush()` is called explicitly
+- `store.close()` or context-manager `__exit__` is called
 
 ```python
 from PyperCache.storage.sqlite_storage import SQLiteStorage
 
 with SQLiteStorage("responses.db") as store:
-    # ... work with the store directly ...
-    pass   # close() flushes and checkpoints WAL on exit
+    # close() flushes and checkpoints WAL on exit
+    pass
 ```
 
-### SQLite pragmas
-
-The backend sets these on every connection:
+#### SQLite pragmas
 
 | Pragma | Value | Reason |
 |--------|-------|--------|
-| `journal_mode` | `WAL` | Readers never block writers; writers never block readers. |
-| `page_size` | `8192` | Larger pages suit big binary blobs. |
-| `synchronous` | `NORMAL` | OS handles durability — no per-commit fsync. |
+| `journal_mode` | `WAL` | Readers and writers do not block each other. |
+| `page_size` | `8192` | Better suited for large binary blobs. |
+| `synchronous` | `NORMAL` | OS handles durability; no per-commit `fsync`. |
 | `cache_size` | `-65536` (64 MB) | Reduces repeated page reads. |
 
-### Data serialization ladder
+#### Data serialization
 
-The `data` BLOB column uses a three-tier encoding (first success wins):
+The `data` BLOB column uses a three-tier encoding (first successful tier wins):
 
 | Condition | Encoding |
 |-----------|----------|
@@ -128,13 +117,11 @@ The `data` BLOB column uses a three-tier encoding (first success wins):
 | Arbitrary Python objects | `\x01` + jsonpickle JSON |
 | Raw `bytes` / `bytearray` | Stored as-is |
 
-### Durability trade-off
+#### Durability trade-off
 
-A process crash between flushes can lose at most `FLUSH_INTERVAL_SECONDS` (default 5 s) of writes. For a cache this is always acceptable — a stale miss on restart is far cheaper than per-write fsync latency under load. If you need stronger guarantees, call `flush()` explicitly after writes you cannot afford to lose, or reduce `flush_interval` when constructing `SQLiteStorage` directly.
+A process crash between flushes can lose at most `FLUSH_INTERVAL_SECONDS` (default 5 s) of writes. For a cache this is generally acceptable — a stale miss on restart is far cheaper than per-write `fsync` latency under load. Call `flush()` explicitly after writes that must not be lost, or reduce `flush_interval` when constructing `SQLiteStorage` directly.
 
-### Tunable constants
-
-Import from `PyperCache.storage.sqlite_storage` if you need to override defaults:
+#### Tunable constants
 
 ```python
 from PyperCache.storage.sqlite_storage import SQLiteStorage
@@ -142,124 +129,103 @@ from PyperCache.storage.sqlite_storage import SQLiteStorage
 store = SQLiteStorage("responses.db", flush_interval=1.0, dirty_threshold=10)
 ```
 
-| Constant | Default | Effect |
-|----------|---------|--------|
-| `DIRTY_FLUSH_THRESHOLD` | `50` | Flush immediately when this many keys are dirty. |
-| `FLUSH_INTERVAL_SECONDS` | `5.0` | Background flush cadence in seconds. |
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `dirty_threshold` | `50` | Trigger an immediate flush when this many keys are dirty. |
+| `flush_interval` | `5.0` | Background flush cadence in seconds. |
 
 ---
 
 ## StorageMechanism — the abstract base
 
-All four backends extend `StorageMechanism` (`PyperCache.storage.base`). The abstract hooks you implement to add a new backend are:
+All four backends extend `StorageMechanism` (`PyperCache.storage.base`). Public methods (`load`, `save`, `get_record`, `store_record`, `update_record`, `erase_everything`) acquire a threading lock before delegating to the `_impl__*` abstract hooks.
 
-| Method | Responsibility |
-|--------|---------------|
+| Abstract method | Responsibility |
+|----------------|---------------|
 | `_impl__touch_store(filepath)` | Create an empty store if one does not exist. Return `True` on success. |
 | `_impl__load(filepath)` | Deserialize all records from disk. Return a `MutableMapping[str, dict]`. |
 | `_impl__save(records, filepath)` | Serialize the full mapping to disk. |
 | `_impl__update_record(key, data)` | Merge `data` into an existing record and persist. |
 | `_impl__erase_everything()` | Delete all records from the store. |
 
-Public methods (`load`, `save`, `get_record`, `store_record`, `update_record`, `erase_everything`) all acquire a threading lock before delegating to the `_impl__*` hooks.
-
 ---
 
-## Creating a New Storage Backend
+## Implementing a custom backend
 
-To add a new storage strategy (e.g., for a custom file format or database), follow these steps:
-
-### 1. Implement the StorageMechanism Abstract Base Class
+### 1. Subclass `StorageMechanism`
 
 Create a new class in `PyperCache/storage/` that inherits from `StorageMechanism` and implements all abstract methods:
 
 ```python
 from pathlib import Path
-from typing import Dict
+from typing import MutableMapping
 from PyperCache.storage.base import StorageMechanism
 
 class MyCustomStorage(StorageMechanism):
-    """Storage backend for [describe your format/database]."""
 
     def _impl__touch_store(self, filepath: Path) -> bool:
-        """Create an empty store at filepath if it doesn't exist."""
-        # Create the file/database/table/etc.
-        # Return True on success, False on failure
-        pass
+        # Create the backing store if it does not exist. Return True on success.
+        ...
 
     def _impl__load(self, filepath: Path) -> MutableMapping[str, dict]:
-        """Load all records from disk into a MutableMapping."""
-        # Deserialize and return the data structure
-        # Can return dict or any MutableMapping implementation
-        pass
+        # Deserialize all records from disk and return them.
+        ...
 
-    def _impl__save(self, cache_records_dict: Dict[str, dict], filepath: Path):
-        """Serialize and save the entire records dict to disk."""
-        # Write the data to persistent storage
-        pass
+    def _impl__save(self, cache_records_dict: dict, filepath: Path):
+        # Write the full records dict to persistent storage.
+        ...
 
     def _impl__update_record(self, key: str, data: dict):
-        """Merge data into existing record and persist the change."""
-        # Update just this key's data without full save if possible
-        pass
+        # Merge data into the existing record for key and persist.
+        ...
 
     def _impl__erase_everything(self):
-        """Remove all records from the backing store."""
-        # Clear the persistent storage
-        pass
+        # Remove all records from the backing store.
+        ...
 ```
 
-### 2. Register Your Backend in the Factory
+The base class handles thread safety. Your implementations do not need to acquire locks.
 
-Add your new extension and class to the `_EXTENSION_TO_STORAGE` mapping in `PyperCache/storage/factory.py`:
+### 2. Register the backend
+
+Add the new extension and class to `_EXTENSION_TO_STORAGE` in `PyperCache/storage/factory.py`:
 
 ```python
-_EXTENSION_TO_STORAGE: Dict[str, Type[StorageMechanism]] = {
+_EXTENSION_TO_STORAGE: dict = {
     ".manifest": ChunkedStorage,
     ".json":     JSONStorage,
     ".pkl":      PickleStorage,
     ".db":       SQLiteStorage,
-    ".myformat": MyCustomStorage,  # Add your new backend
+    ".myformat": MyCustomStorage,   # add your backend here
 }
 ```
 
-### 3. Add Tests
+### 3. Add tests and documentation
 
-Create a test file in `tests/` following the pattern of existing backend tests (see `test_storage.py`). Test all operations and edge cases.
+Follow the pattern of existing backend tests in `tests/test_storage.py`. Add your backend to the table in the "Choosing a backend" section of this document.
 
-### 4. Update Documentation
-
-Add your new backend to the table in the "Choosing a backend" section above, describing when to use it.
-
-### Example: YAML Storage Backend
-
-Here's a complete example implementing YAML storage:
+### Example: YAML backend
 
 ```python
 import yaml
 from pathlib import Path
-from typing import Dict
 from PyperCache.storage.base import StorageMechanism
 
 class YAMLStorage(StorageMechanism):
-    """Storage backend using YAML format for human-readable caching."""
 
     def _impl__touch_store(self, filepath: Path) -> bool:
         filepath.touch(exist_ok=True)
         return True
 
-    def _impl__load(self, filepath: Path) -> Dict[str, dict]:
-        with open(filepath, "r") as f:
-            content = f.read().strip()
+    def _impl__load(self, filepath: Path) -> dict:
+        content = filepath.read_text().strip()
         return yaml.safe_load(content) if content else {}
 
-    def _impl__save(self, cache_records_dict: Dict[str, dict], filepath: Path):
-        with open(filepath, "w") as f:
-            yaml.dump(cache_records_dict, f, default_flow_style=False)
+    def _impl__save(self, cache_records_dict: dict, filepath: Path):
+        filepath.write_text(yaml.dump(cache_records_dict, default_flow_style=False))
 
     def _impl__update_record(self, key: str, data: dict):
-        record = self.get_record(key)
-        record.update(data)
+        self.records[key].update(data)
         self.save(self.records)
 
     def _impl__erase_everything(self):
@@ -267,32 +233,21 @@ class YAMLStorage(StorageMechanism):
         self.save(self.records)
 ```
 
-Then register it:
+Register it, then use it like any other backend:
 
 ```python
-# In factory.py
+# factory.py
 _EXTENSION_TO_STORAGE[".yaml"] = YAMLStorage
+
+# application code
+cache = Cache(filepath="my_cache.yaml")
 ```
-
-Now you can use it:
-
-```python
-cache = Cache(filepath="my_cache.yaml")  # Uses YAMLStorage
-```
-
-### Key Considerations
-
-- **Thread Safety**: The base class handles locking, so your implementations don't need to worry about concurrency.
-- **Performance**: For large caches, consider lazy loading or incremental updates in `_impl__update_record`.
-- **Data Types**: Ensure your serialization handles all Python data types that might be cached.
-- **Error Handling**: Implementations should be robust to file corruption, permissions issues, etc.
-- **Atomicity**: For databases, use transactions; for files, consider temporary files and atomic moves.
 
 ---
 
 ## RequestLogger
 
-`RequestLogger` maintains an append-only log of API request metadata (URI and HTTP status code), completely separate from the cache. Use it alongside `Cache` when you want an operational audit trail.
+`RequestLogger` maintains an append-only JSONL log of request metadata (URI and HTTP status code), independent of the cache. Use it alongside `Cache` when you need an operational audit trail.
 
 ```python
 from PyperCache import RequestLogger
@@ -302,29 +257,29 @@ log = RequestLogger(filepath="api_requests.log")
 
 If `filepath` is omitted, the default is `api_logfile.log` in the current working directory.
 
-### Logging a request
+### `log(uri, status)`
+
+Appends one JSON object as a line (JSONL). An O(1) operation regardless of how many records already exist. Writes are protected by a threading lock — `RequestLogger` is safe to share across threads.
 
 ```python
-log.log(uri="/api/users", status=200)
+log.log(uri="/api/users",  status=200)
 log.log(uri="/api/health", status=503)
 ```
 
-Each call appends one JSON object as a line (JSONL format) — an O(1) operation regardless of how many records already exist. Writes are protected by a threading lock; `RequestLogger` is safe to share across threads.
+### `get_logs_from_last_seconds(seconds) → list[LogRecord]`
 
-### Reading recent logs
+Returns log entries from the last `seconds` seconds, sorted oldest-first.
 
 ```python
-recent = log.get_logs_from_last_seconds(60)   # last 60 seconds, sorted oldest-first
+recent = log.get_logs_from_last_seconds(60)
 for entry in recent:
     print(entry.data["uri"], entry.data["status"])
 ```
 
-### `LogRecord`
+### LogRecord
 
-Each entry in `.records` and in the list returned by `get_logs_from_last_seconds` is a `LogRecord`:
-
-| Attribute | Type | Content |
-|-----------|------|---------|
+| Attribute | Type | Description |
+|-----------|------|-------------|
 | `.timestamp` | `float` | Unix timestamp of the log entry. |
 | `.data` | `dict` | `{"uri": ..., "status": ...}` |
 
@@ -334,11 +289,11 @@ print(repr(record))
 # 06-04-2026 02:15:30,123456 PM - {'uri': '/api/users', 'status': 200}
 ```
 
-### File format and migration
+### File format
 
-The log file is JSONL (one JSON object per line). If `RequestLogger` encounters a legacy file written as a single JSON array, it detects and migrates it transparently on load — rewriting it as JSONL in place.
+The log file is JSONL (one JSON object per line). If `RequestLogger` encounters a legacy file written as a single JSON array, it detects and migrates it transparently on load, rewriting it as JSONL in place.
 
-### Full HTTP client workflow
+### Usage alongside Cache
 
 ```python
 from PyperCache import Cache, RequestLogger
@@ -351,20 +306,21 @@ def fetch(url: str) -> dict:
     if cache.is_data_fresh(key):
         return cache.get(key).data
 
-    response = call_http_api(url)   # your HTTP layer
+    response = call_http_api(url)
     log.log(uri=url, status=response.status_code)
     cache.store(key, response.json(), expiry=300)
     return response.json()
 ```
 
+> **Note:** `RequestLogger` stores only URI and status code. Response bodies live in `Cache`. The two are not linked.
+
 ---
 
 ## Caveats summary
 
-**JSON backend** — uses jsonpickle fallback for complex objects, which may make the file non-human-readable. Rewrites the whole file on every save — keep caches small.
-
-**SQLite backend** — understand the flush timing if maximum durability on every `store` matters. Call `flush()` explicitly or use a context manager to ensure no writes are lost.
-
-**`record.query`** — runs in memory over a single loaded record. It is not SQL; it does not scan the backend or cross keys.
-
-**`RequestLogger`** — log records are not linked to cache records. The logger stores only URI and status; response bodies live in `Cache`.
+| Backend / feature | Caveat |
+|---|---|
+| JSON backend | Falls back to `jsonpickle` for non-JSON-serializable types, which may produce non-human-readable output. Rewrites the whole file on every `store()` — keep caches small. |
+| SQLite backend | Writes may be lost if the process crashes between flushes (up to `flush_interval` seconds). Call `flush()` explicitly or use a context manager when durability is required. |
+| `record.query` | Operates in memory over a single loaded record. Not SQL; does not scan the backend or cross keys. |
+| `RequestLogger` | Log records are not linked to cache records. The logger stores only URI and status; response bodies live in `Cache`. |

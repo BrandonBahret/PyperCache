@@ -1,44 +1,72 @@
 # Cache & CacheRecord
 
-This document covers the two core classes: `Cache` (the main API) and `CacheRecord` (a single cached entry). For query navigation over a loaded record see [QUERY.md](QUERY.md). For backend choice and internals see [STORAGE.md](STORAGE.md).
+`Cache` is the primary API for storing and retrieving data. `CacheRecord` is the object returned by `Cache.get()`. For query navigation over a loaded record see [QUERY.md](QUERY.md). For backend selection and internals see [STORAGE.md](STORAGE.md).
 
 ---
 
 ## Cache
 
-`Cache` is the entry point for all cache operations. Instantiate it with a filepath; the file extension determines which storage backend is used.
+### Instantiation
 
 ```python
 from PyperCache import Cache
 
-cache = Cache(filepath="api-cache.pkl")   # also: .json  .manifest  .db
+cache = Cache(filepath="api-cache.pkl")   # .pkl | .json | .manifest | .db
 ```
 
-If `filepath` is omitted, the default is `api-cache.pkl` in the current working directory.
+The file extension determines the storage backend. If `filepath` is omitted the default is `api-cache.pkl` in the current working directory. The file (and any parent directories) is created automatically if it does not exist.
 
-### Storing a value
+---
+
+### Methods
+
+#### `store(key, data, expiry=math.inf, cast=None)`
+
+Creates or overwrites a cache entry.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `key` | `str` | required | Unique identifier for the entry. |
+| `data` | `dict` | required | JSON-like payload to cache. |
+| `expiry` | `int \| float` | `math.inf` | Seconds until the record is considered stale. Omit for no expiry. |
+| `cast` | `type` | `None` | Registered class used when retrieving via `get_object()`. |
+
+To update the payload of an existing record without replacing it, use `update()` — it preserves the original expiry and cast type.
+
+---
+
+#### `get(key) → CacheRecord`
+
+Returns the `CacheRecord` for `key`. Raises `KeyError` if the key is absent.
 
 ```python
-cache.store(key, data, expiry=math.inf, cast=None)
+record = cache.get("search:v1:python")
+print(record.data)                         # raw dict
+print(record.query.get("meta.total"))      # navigate without mutating
 ```
 
-| Parameter | Type | Default | Notes |
-|-----------|------|---------|-------|
-| `key` | `str` | required | Unique identifier for this cache entry. |
-| `data` | `dict` | required | The payload to cache. Must be a dict (JSON-like blob). |
-| `expiry` | `int` or `float` | `math.inf` | Seconds until the record is considered stale. Omit for no expiry. |
-| `cast` | `type` | `None` | A registered class to use when deserializing via `get_object`. |
+---
 
-`store` creates or overwrites. If you want to update only the data of an existing record without recreating it, use `update`.
+#### `get_object(key, default_value=UNSET) → object`
 
-### Checking freshness
+Returns a typed instance of the class registered via `cast` on `store()`. Raises `KeyError` if the key is absent (suppressed when `default_value` is provided). Raises `AttributeError` if no cast type is registered for this record.
 
 ```python
-cache.has("key")            # True if a record exists (stale or fresh)
-cache.is_data_fresh("key")  # True if a record exists AND has not expired
+result = cache.get_object("users:v1")           # raises KeyError if missing
+result = cache.get_object("users:v1", default_value=None)  # returns None
 ```
 
-The common pattern before any network call:
+---
+
+#### `has(key) → bool`
+
+Returns `True` if a record exists for `key`, regardless of staleness.
+
+---
+
+#### `is_data_fresh(key) → bool`
+
+Returns `True` if a record exists and has not exceeded its expiry. The standard guard before an expensive fetch:
 
 ```python
 if not cache.is_data_fresh(key):
@@ -46,51 +74,25 @@ if not cache.is_data_fresh(key):
     cache.store(key, response, expiry=300)
 ```
 
-### Retrieving values
+---
 
-`get` returns the raw `CacheRecord`:
+#### `update(key, data)`
 
-```python
-record = cache.get("key")
-print(record.data)           # the raw dict
-print(record.query.get("meta.total_hits"))  # navigate without mutating
-```
-
-Raises `KeyError` if the key is not present.
-
-`get_object` returns a typed instance (requires `cast` to have been set on `store`):
-
-```python
-user_list = cache.get_object("users:v1")   # UserList instance
-```
-
-Raises `KeyError` if missing; raises `AttributeError` if no cast type is registered. Pass a `default_value` to suppress the `KeyError`:
-
-```python
-result = cache.get_object("users:v1", default_value=None)
-```
-
-### Updating a record in place
-
-```python
-cache.update("key", new_data_dict)
-```
-
-Replaces the data payload and refreshes the timestamp. The expiry and cast type are preserved. Raises `KeyError` if the record does not exist.
-
-### Erasing everything
-
-```python
-cache.completely_erase_cache()
-```
-
-Permanently deletes all records from the backing store. Use with care — there is no undo.
+Replaces the data payload of an existing record and refreshes its timestamp. Preserves the original expiry and cast type. Raises `KeyError` if the key does not exist.
 
 ---
 
-## Typed round-trips with `@Cache.cached`
+#### `completely_erase_cache()`
 
-`@Cache.cached` is a class decorator that registers a class in the shared `ClassRepository`. Once registered, its name can be stored alongside a cache record and resolved back to the class at retrieval time.
+Permanently deletes all records from the backing store. There is no undo.
+
+---
+
+### Typed round-trips
+
+#### `@Cache.cached`
+
+A class decorator that registers a class in the shared `ClassRepository`. Once registered, its name is stored alongside a cache entry and resolved back to the class at retrieval time.
 
 ```python
 from PyperCache import Cache
@@ -109,24 +111,18 @@ cache.store(
     cast=SearchResult,
 )
 
-result = cache.get_object("search:v1:python")
-# result is a SearchResult instance: SearchResult(hits=[...], meta={...})
+result = cache.get_object("search:v1:python")   # SearchResult instance
 ```
 
-`@Cache.cached` uses a shared `ClassRepository` singleton. Keep this in mind in multi-process or isolated test environments — a class registered in one process is not visible to another.
+`store()` records the class's `__name__` string. `get_object()` resolves it via `ClassRepository`. If the class is not registered at retrieval time (e.g. in a fresh process that has not imported it), resolution raises `NameError`.
 
-### How the cast type is stored and resolved
+> **Note:** `ClassRepository` is a singleton. A class registered in one process is not visible to another.
 
-`store` records the class's `__name__` string (`"SearchResult"`) alongside the payload. On `get_object`, `CacheRecord.cast` resolves that string back to the class via `ClassRepository`. If the class is not registered at retrieval time (e.g. in a fresh process that hasn't imported and decorated it), resolution raises `NameError`.
+---
 
-## Simple API models with `@apimodel`
+#### `@apimodel`
 
-For small, annotation-driven models you can use the lightweight `@apimodel` decorator which:
-- registers the class with the shared `ClassRepository`,
-- injects a constructor that accepts a raw `dict`, and
-- provides `from_dict` and `as_dict` helpers.
-
-Example:
+A lightweight alternative to `@Cache.cached` for annotation-driven models. It registers the class, injects a constructor that accepts a raw `dict`, and provides `from_dict()` / `as_dict()` helpers.
 
 ```python
 from PyperCache import Cache
@@ -134,75 +130,61 @@ from PyperCache.models.apimodel import apimodel
 
 @apimodel
 class User:
-    id: int
-    name: str
+    id:    int
+    name:  str
     email: str | None
 
 cache = Cache(filepath="users.pkl")
-raw = {"id": 1, "name": "Alice", "email": "alice@example.com"}
+cache.store("user:1", {"id": 1, "name": "Alice", "email": "alice@example.com"}, cast=User)
 
-# store with the model as the cast type
-cache.store("user:1", raw, expiry=3600, cast=User)
-
-# retrieve a typed instance (constructor was injected by @apimodel)
 user = cache.get_object("user:1")
-print(user.name)          # Alice
+print(user.name)            # Alice
 
-# or construct directly from a dict
 u2 = User.from_dict({"id": 2, "name": "Bob", "email": None})
-print(u2.as_dict())       # original dict preserved
+print(u2.as_dict())
 ```
 
-`@apimodel` is a convenient alternative to `@Cache.cached` when you prefer
-annotation-driven hydration and the `from_dict`/`as_dict` helpers.
 ---
 
 ## CacheRecord
 
-`CacheRecord` is what `cache.get()` returns. You rarely construct one directly.
+`CacheRecord` is returned by `cache.get()`. It is rarely constructed directly.
 
-### Core properties
+### Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `.data` | `dict` | The cached payload. |
-| `.timestamp` | `float` | Unix timestamp of when the record was stored or last updated. |
-| `.expiry` | `float` | Seconds the record stays fresh (`math.inf` if none was set). |
-| `.cast_str` | `str or None` | The registered class name, or `None`. |
-| `.cast` | `type or None` | Lazily resolved class from `.cast_str`. Cached after first access. |
-| `.is_data_stale` | `bool` | `True` if `now > timestamp + expiry`. |
-| `.should_convert_type` | `bool` | `True` if `.cast` is a valid type. |
+| `.timestamp` | `float` | Unix timestamp of the last `store()` or `update()`. |
+| `.expiry` | `float` | Seconds until stale (`math.inf` if no expiry was set). |
+| `.cast_str` | `str \| None` | Registered class name, or `None`. |
+| `.cast` | `type \| None` | Lazily resolved class from `.cast_str`; cached after first access. |
+| `.is_data_stale` | `bool` | `True` when `now > timestamp + expiry`. |
+| `.should_convert_type` | `bool` | `True` when `.cast` resolves to a valid type. |
 
-### The `query` property
+### `.query`
+
+Returns a `JsonInjester` over `.data`. Built once on first access and reused. Operates entirely in memory — it never touches the storage backend. Invalidated and rebuilt after `record.update()`.
 
 ```python
 record = cache.get("search:v1:python")
-q = record.query     # JsonInjester — see QUERY.md
-total = q.get("meta.total")
-staff = q.get("hits?role=staff")
+total  = record.query.get("meta.total")
+staff  = record.query.get("hits?role=staff")
 ```
 
-`record.query` builds a `JsonInjester` over `.data` on first access and reuses it. It operates entirely in memory on the already-loaded dict — it never touches the storage backend. After calling `record.update(new_data)`, the injester is invalidated and rebuilt on next access.
+See [QUERY.md](QUERY.md) for the full selector syntax.
 
-### Updating a record directly
+### `.update(data)`
 
-```python
-record.update({"hits": [...], "meta": {"total": 7}})
-```
+Replaces `.data`, refreshes `.timestamp`, and invalidates the cached query injester. Equivalent to calling `cache.update(key, data)` from the `Cache` level.
 
-Replaces `.data`, refreshes `.timestamp`, and invalidates the cached `query`. This is equivalent to `cache.update(key, data)` from the `Cache` level.
+### `.as_dict()`
 
-### Serialization
-
-```python
-d = record.as_dict()
-```
-
-Returns a plain dict safe for serialization. `math.inf` is encoded as the string `'math.inf'` so the record can survive JSON round-trips.
+Returns a plain dict safe for serialization. `math.inf` is encoded as the string `'math.inf'` for JSON compatibility.
 
 ---
 
-## Full lifecycle example
+## Lifecycle example
 
 ```python
 from PyperCache import Cache
@@ -210,28 +192,31 @@ from PyperCache import Cache
 @Cache.cached
 class OrgProfile:
     def __init__(self, name=None, members=None, **kw):
-        self.name = name
+        self.name    = name
         self.members = members or []
 
 cache = Cache(filepath="org-cache.db")
 key   = "org:acme"
 
-# 1. Check freshness, fetch if stale
+# 1. Fetch only when stale
 if not cache.is_data_fresh(key):
     payload = {"name": "Acme Corp", "members": [{"id": 1, "role": "admin"}]}
     cache.store(key, payload, expiry=1800, cast=OrgProfile)
 
-# 2. Navigate the raw payload without mutating it
+# 2. Navigate the raw payload
 record = cache.get(key)
-admin_members = record.query.get("members?role=admin")
+admins = record.query.get("members?role=admin")
 
-# 3. Get a typed object
-org = cache.get_object(key)   # OrgProfile instance
+# 3. Retrieve a typed instance
+org = cache.get_object(key)   # OrgProfile
 
-# 4. Update in place when new data arrives (preserves expiry and cast)
-cache.update(key, {"name": "Acme Corp", "members": [{"id": 1, "role": "admin"}, {"id": 2, "role": "member"}]})
+# 4. Update in place (preserves expiry and cast)
+cache.update(key, {"name": "Acme Corp", "members": [
+    {"id": 1, "role": "admin"},
+    {"id": 2, "role": "member"},
+]})
 
-# 5. Check staleness directly on the record
+# 5. Check staleness
 if record.is_data_stale:
-    print("Record has expired — re-fetch recommended.")
+    print("Record expired — re-fetch recommended.")
 ```

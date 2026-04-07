@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import dataclasses
 import typing
-from typing import Any
+from typing import Any, Type
 
+
+T = typing.TypeVar("T")
 
 def _is_generic_alias(obj: Any) -> bool:
     try:
@@ -14,7 +16,7 @@ def _is_generic_alias(obj: Any) -> bool:
         return hasattr(obj, "__origin__") and hasattr(obj, "__args__")
 
 
-def instantiate_type(target_type: Any, data: Any) -> Any:
+def instantiate_type(target_type: Type[T], data: Any) -> T:
     """Instantiate or cast *data* into *target_type*.
 
     Supports simple classes (preferring ``from_dict``), dataclasses, and
