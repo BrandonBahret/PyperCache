@@ -7,7 +7,7 @@ name = "pypercache"
 version = "0.1.4"
 description = "Durable file-backed caching for JSON-like data with pluggable storage backends"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 requires-python = ">=3.8"
 authors = [
     {name = "Brandon Bahret", email = "your.email@example.com"},
@@ -19,7 +19,6 @@ keywords = ["cache", "persistence", "json", "pickle", "sqlite", "storage"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
