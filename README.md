@@ -78,7 +78,7 @@ print(result.total)                     # 3
 q = cache.get(KEY).query
  
 print(q.get("total"))                           # 3
-print(q.get("hits?role=staff"))                 # [Alice, Carol]
+print(q.get("hits?role=staff.name"))                 # [Alice, Carol]
 print(q.get("hits?name*"))                      # ['Alice', 'Bob', 'Carol']
 print(q.get("hits?role=staff", select_first=True)["name"])  # 'Alice'
  
