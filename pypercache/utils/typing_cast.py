@@ -4,6 +4,8 @@ import dataclasses
 import typing
 from typing import Any, Type
 
+from .sentinel import UNSET
+
 
 T = typing.TypeVar("T")
 
@@ -23,6 +25,9 @@ def instantiate_type(target_type: Type[T], data: Any) -> T:
     basic generics: ``list[T]`` and ``dict[K, V]``. Falls back to returning
     the original *data* when no casting is possible.
     """
+    if data is UNSET:
+        return UNSET
+
     if data is None:
         return None
 
@@ -34,6 +39,9 @@ def instantiate_type(target_type: Type[T], data: Any) -> T:
         args = typing.get_args(target_type)
     except Exception:
         pass
+
+    if origin is typing.Annotated:
+        return instantiate_type(args[0], data)
 
     if origin is list or origin is typing.List:
         item_type = args[0] if args else Any
@@ -55,6 +63,9 @@ def instantiate_type(target_type: Type[T], data: Any) -> T:
 
     # Concrete class handling
     if isinstance(target_type, type):
+        if isinstance(data, target_type):
+            return data
+
         # Prefer explicit from_dict constructor
         if hasattr(target_type, "from_dict") and callable(getattr(target_type, "from_dict")):
             return target_type.from_dict(data)

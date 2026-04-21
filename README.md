@@ -26,9 +26,29 @@ https://github.com/BrandonBahret/PyperCache/tree/master/docs
 
 - **Pluggable Backends**: Choose storage by file extension (.pkl, .json, .manifest, .db)
 - **TTL & Staleness**: Optional expiry and acceptable staleness windows
-- **Typed Objects**: Decorate classes for automatic serialization/deserialization
+- **Typed Objects**: Decorate classes for automatic serialization/deserialization, including API key aliases
 - **Query Navigation**: Safe, read-only JSON path queries with filters
 - **Request Logging**: Thread-safe JSONL audit trails
+
+## API Wrapper
+
+`pypercache.api_wrapper.ApiWrapper` provides a sync-first base class for building small API clients on top of `requests`, `Cache`, and `RequestLogger`.
+
+```python
+from pypercache.api_wrapper import ApiWrapper
+from pypercache.models.apimodel import apimodel
+
+
+@apimodel
+class Widget:
+    id: int
+    name: str
+
+
+class WidgetClient(ApiWrapper):
+    def list_widgets(self) -> list[Widget]:
+        return self.request("GET", "/widgets", expected="json", cast=list[Widget])
+```
 
 ## Testing
 
@@ -42,8 +62,11 @@ The snippet below demonstrates every major feature in one pass: choosing a backe
  
 ```python
 import math
+from datetime import datetime
+from typing import Annotated
+
 from pypercache import Cache, RequestLogger
-from pypercache.models.apimodel import apimodel
+from pypercache.models.apimodel import Alias, Timestamp, apimodel
  
 # ── 1. Backend is chosen by file extension ──────────────────────────────────
 cache = Cache(filepath="api-cache.db")   # .pkl / .json / .manifest / .db
@@ -53,6 +76,8 @@ log   = RequestLogger("api_requests.log")
 @apimodel
 class SearchResult:
     total: int
+    next_page: Annotated[str | None, Alias("nextPage")]
+    fetched_at: Annotated[datetime, Alias("fetchedAt"), Timestamp()]
     hits:  list
  
 # ── 3. Fetch-or-cache pattern ────────────────────────────────────────────────
@@ -61,6 +86,8 @@ KEY = "search:v1:python"
 if not cache.is_data_fresh(KEY):
     payload = {
         "total": 3,
+        "nextPage": None,
+        "fetchedAt": "2026-04-19T12:34:56Z",
         "hits": [
             {"name": "Alice", "role": "staff",  "score": 92},
             {"name": "Bob",   "role": "guest",  "score": 74},
@@ -73,6 +100,8 @@ if not cache.is_data_fresh(KEY):
 # ── 4. Retrieve a typed object ───────────────────────────────────────────────
 result: SearchResult = cache.get_object(KEY)  # SearchResult instance
 print(result.total)                           # 3
+print(result.next_page)                       # None
+print(result.fetched_at.isoformat())          # 2026-04-19T12:34:56+00:00
  
 # ── 5. Query without mutating the payload ───────────────────────────────────
 q = cache.get(KEY).query
@@ -231,6 +260,8 @@ For the complete selector reference see [QUERY.md](QUERY.md).
 | Topic | File |
 |---|---|
 | `Cache`, `CacheRecord`, TTL, typed objects | [CACHE.md](CACHE.md) |
+| `ApiWrapper`, `ApiHTTPError`, `SSEEvent` | [API_WRAPPER.md](pypercache-docs/API_WRAPPER.md) |
+| `@apimodel`, aliases, timestamps | [APIMODEL.md](pypercache-docs/APIMODEL.md) |
 | `JsonInjester` / `record.query` selector syntax | [QUERY.md](QUERY.md) |
 | Storage backends, `RequestLogger`, SQLite internals | [STORAGE.md](STORAGE.md) |
  

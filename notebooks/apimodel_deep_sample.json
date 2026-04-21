@@ -1,0 +1,380 @@
+{
+  "request_id": "demo-2026-04-19-apimodel",
+  "generated_at": "2026-04-19T18:40:00-07:00",
+  "page": {
+    "number": 1,
+    "size": 3,
+    "next": null
+  },
+  "organizations": [
+    {
+      "id": 101,
+      "slug": "atlas-foundry",
+      "active": true,
+      "owner": {
+        "id": 5001,
+        "name": "Mina Vale",
+        "profile": {
+          "email": "mina@example.test",
+          "timezone": "America/Phoenix",
+          "address": {
+            "city": "Flagstaff",
+            "region": "AZ",
+            "country": "US"
+          }
+        }
+      },
+      "projects": [
+        {
+          "id": 9001,
+          "name": "Cinder Index",
+          "status": "green",
+          "releases": [
+            {
+              "version": "1.2.0",
+              "notes": [
+                "metadata paging",
+                "faster cold reads"
+              ],
+              "artifacts": {
+                "wheel": {
+                  "sha256": "demo-wheel-9001-120",
+                  "bytes": 182144
+                },
+                "sdist": {
+                  "sha256": "demo-sdist-9001-120",
+                  "bytes": 74211
+                }
+              }
+            },
+            {
+              "version": "1.1.4",
+              "notes": [
+                "retry tagging",
+                "trace cleanup"
+              ],
+              "artifacts": {
+                "wheel": {
+                  "sha256": "demo-wheel-9001-114",
+                  "bytes": 175002
+                }
+              }
+            }
+          ],
+          "metrics": {
+            "latency_ms": {
+              "p50": 18,
+              "p95": 44,
+              "p99": 79
+            },
+            "daily_requests": [
+              820,
+              901,
+              977,
+              1044,
+              998,
+              1120,
+              1186
+            ]
+          }
+        },
+        {
+          "id": 9002,
+          "name": "Needle Cache",
+          "status": "yellow",
+          "releases": [
+            {
+              "version": "0.9.3",
+              "notes": [
+                "sample compaction",
+                "manifest repair"
+              ],
+              "artifacts": {
+                "wheel": {
+                  "sha256": "demo-wheel-9002-093",
+                  "bytes": 160313
+                }
+              }
+            }
+          ],
+          "metrics": {
+            "latency_ms": {
+              "p50": 26,
+              "p95": 61,
+              "p99": 103
+            },
+            "daily_requests": [
+              410,
+              433,
+              452,
+              481,
+              500,
+              521,
+              540
+            ]
+          }
+        }
+      ],
+      "auditTrail": {
+        "created_by": {
+          "id": 3001,
+          "name": "Rafi Stone",
+          "profile": {
+            "email": "rafi@example.test",
+            "timezone": "America/Denver",
+            "address": {
+              "city": "Boulder",
+              "region": "CO",
+              "country": "US"
+            }
+          }
+        },
+        "events": [
+          {
+            "at": "2026-04-18T10:15:00-07:00",
+            "kind": "create",
+            "actor": "rafi",
+            "details": {
+              "source": "import",
+              "rows": 42
+            }
+          },
+          {
+            "at": "2026-04-19T09:12:00-07:00",
+            "kind": "sync",
+            "actor": "mina",
+            "details": {
+              "source": "api",
+              "rows": 11
+            }
+          }
+        ]
+      },
+      "stats": {
+        "open_issues": 4,
+        "stars": 128,
+        "labels": [
+          "python",
+          "cache",
+          "notebook"
+        ]
+      }
+    },
+    {
+      "id": 102,
+      "slug": "quiet-lantern",
+      "active": false,
+      "owner": {
+        "id": 5002,
+        "name": "Jo Rowan",
+        "profile": {
+          "email": "jo@example.test",
+          "timezone": "America/New_York",
+          "address": {
+            "city": "Rochester",
+            "region": "NY",
+            "country": "US"
+          }
+        }
+      },
+      "projects": [
+        {
+          "id": 9010,
+          "name": "Harbor Notes",
+          "status": "green",
+          "releases": [
+            {
+              "version": "2.4.1",
+              "notes": [
+                "bulk hydration",
+                "schema hints"
+              ],
+              "artifacts": {
+                "wheel": {
+                  "sha256": "demo-wheel-9010-241",
+                  "bytes": 245000
+                }
+              }
+            }
+          ],
+          "metrics": {
+            "latency_ms": {
+              "p50": 12,
+              "p95": 30,
+              "p99": 58
+            },
+            "daily_requests": [
+              1210,
+              1198,
+              1260,
+              1304,
+              1322,
+              1340,
+              1401
+            ]
+          }
+        }
+      ],
+      "auditTrail": {
+        "created_by": {
+          "id": 3002,
+          "name": "Paz Chen",
+          "profile": {
+            "email": "paz@example.test",
+            "timezone": "America/Los_Angeles",
+            "address": {
+              "city": "Oakland",
+              "region": "CA",
+              "country": "US"
+            }
+          }
+        },
+        "events": [
+          {
+            "at": "2026-04-17T15:20:00-07:00",
+            "kind": "create",
+            "actor": "paz",
+            "details": {
+              "source": "manual",
+              "rows": 1
+            }
+          }
+        ]
+      },
+      "stats": {
+        "open_issues": 0,
+        "stars": 64,
+        "labels": [
+          "docs",
+          "archive"
+        ]
+      }
+    },
+    {
+      "id": 103,
+      "slug": "ember-bridge",
+      "active": true,
+      "owner": {
+        "id": 5003,
+        "name": "Ilya Reed",
+        "profile": {
+          "email": "ilya@example.test",
+          "timezone": "Europe/London",
+          "address": {
+            "city": "Bristol",
+            "region": "England",
+            "country": "GB"
+          }
+        }
+      },
+      "projects": [
+        {
+          "id": 9020,
+          "name": "River Pin",
+          "status": "red",
+          "releases": [],
+          "metrics": {
+            "latency_ms": {
+              "p50": 40,
+              "p95": 120,
+              "p99": 240
+            },
+            "daily_requests": [
+              300,
+              280,
+              260,
+              270,
+              255,
+              249,
+              242
+            ]
+          }
+        },
+        {
+          "id": 9021,
+          "name": "Glass Queue",
+          "status": "green",
+          "releases": [
+            {
+              "version": "3.0.0",
+              "notes": [
+                "lazy payload split",
+                "deep metrics export"
+              ],
+              "artifacts": {
+                "wheel": {
+                  "sha256": "demo-wheel-9021-300",
+                  "bytes": 310400
+                },
+                "docs": {
+                  "sha256": "demo-docs-9021-300",
+                  "bytes": 90200
+                }
+              }
+            }
+          ],
+          "metrics": {
+            "latency_ms": {
+              "p50": 9,
+              "p95": 21,
+              "p99": 35
+            },
+            "daily_requests": [
+              2200,
+              2211,
+              2300,
+              2366,
+              2400,
+              2444,
+              2501
+            ]
+          }
+        }
+      ],
+      "auditTrail": {
+        "created_by": {
+          "id": 3003,
+          "name": "Sana Park",
+          "profile": {
+            "email": "sana@example.test",
+            "timezone": "Asia/Seoul",
+            "address": {
+              "city": "Seoul",
+              "region": "Seoul",
+              "country": "KR"
+            }
+          }
+        },
+        "events": [
+          {
+            "at": "2026-04-16T03:00:00-07:00",
+            "kind": "create",
+            "actor": "sana",
+            "details": {
+              "source": "api",
+              "rows": 16
+            }
+          },
+          {
+            "at": "2026-04-19T08:45:00-07:00",
+            "kind": "incident",
+            "actor": "ilya",
+            "details": {
+              "severity": "low",
+              "duration_minutes": 14
+            }
+          }
+        ]
+      },
+      "stats": {
+        "open_issues": 9,
+        "stars": 211,
+        "labels": [
+          "queue",
+          "metrics",
+          "release"
+        ]
+      }
+    }
+  ]
+}

@@ -123,25 +123,71 @@ result = cache.get_object("search:v1:python")   # SearchResult instance
 #### `@apimodel`
 
 A lightweight alternative to `@Cache.cached` for annotation-driven models. It registers the class, injects a constructor that accepts a raw `dict`, and provides `from_dict()` / `as_dict()` helpers.
+Annotated fields missing from the raw payload are set to the shared `UNSET` sentinel; explicit `None` values remain `None`.
+Use `Alias(...)` inside `typing.Annotated` when the API payload uses a key that is not the Python attribute name. If an alias is present, that raw key is authoritative; a same-named field key is ignored.
+Use `Timestamp(...)` inside `typing.Annotated` when a raw API timestamp should hydrate as a `datetime` field. It supports ISO 8601 strings, Unix timestamps, millisecond timestamps, and explicit `datetime.strptime` formats.
 
 ```python
+from datetime import datetime
 from pypercache import Cache
-from pypercache.models.apimodel import apimodel
+from typing import Annotated
+
+from pypercache.models.apimodel import Alias, Timestamp, apimodel
 
 @apimodel
 class User:
     id:    int
-    name:  str
+    name:  Annotated[str, Alias("display_name")]
+    plan:  Annotated[str, Alias("planCode")]
+    joined_at: Annotated[datetime, Alias("joinedAt"), Timestamp()]
     email: str | None
 
 cache = Cache(filepath="users.pkl")
-cache.store("user:1", {"id": 1, "name": "Alice", "email": "alice@example.com"}, cast=User)
+cache.store(
+    "user:1",
+    {
+        "id": 1,
+        "display_name": "Alice",
+        "planCode": "pro",
+        "joinedAt": "2026-04-19T12:34:56Z",
+        "email": "alice@example.com",
+    },
+    cast=User,
+)
 
 user = cache.get_object("user:1")
 print(user.name)            # Alice
+print(user.plan)            # pro
+print(user.joined_at.isoformat())  # 2026-04-19T12:34:56+00:00
 
-u2 = User.from_dict({"id": 2, "name": "Bob", "email": None})
+u2 = User.from_dict({
+    "id": 2,
+    "display_name": "Bob",
+    "planCode": "free",
+    "joinedAt": 1776602096,
+    "email": None,
+})
 print(u2.as_dict())
+```
+
+Aliases also work with lazy fields:
+
+```python
+from typing import Annotated
+
+from pypercache.models.apimodel import Alias, apimodel
+from pypercache.models.lazy import Lazy
+
+@apimodel
+class Profile:
+    timezone: str
+
+@apimodel
+class UserWithProfile:
+    profile: Lazy[Annotated[Profile, Alias("profile_v2")]]
+
+user = UserWithProfile({"profile_v2": {"timezone": "America/Phoenix"}})
+print(user.profile.timezone)  # America/Phoenix
 ```
 
 ---

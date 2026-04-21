@@ -43,6 +43,8 @@ RequestLogger(filepath="…")          independent of Cache
 | Module | Responsibility | Go here when… |
 |--------|---------------|---------------|
 | `pypercache.core` | `Cache`, `CacheRecord`, `RequestLogger`, `LogRecord` | You use the main API or request logs. |
+| `pypercache.api_wrapper` | `ApiWrapper`, `ApiHTTPError`, `SSEEvent` | You are building an HTTP API client on top of pypercache. |
+| `pypercache.models` | `@apimodel`, aliases, timestamps, lazy fields | You want typed API-shaped models. |
 | `pypercache.query` | `JsonInjester` | You need query parsing or use `JsonInjester` directly. |
 | `pypercache.storage` | Backends and `get_storage_mechanism` | You inspect or extend how paths map to storage. |
 | `pypercache.utils` | Serialization, patterns, filesystem helpers | You reuse serializers, the class registry, or FS helpers. |
@@ -70,6 +72,26 @@ The core API. Read this first.
 - Typed round-trips with `@Cache.cached` and `@apimodel`
 - `CacheRecord` properties and the `.query` accessor
 - Full lifecycle example
+
+### [API_WRAPPER.md](API_WRAPPER.md) — `ApiWrapper` base class
+
+The sync-first wrapper layer for HTTP clients built on pypercache.
+
+- `ApiWrapper` constructor and subclassing pattern
+- `request(...)`, `download_to(...)`, and `stream_sse(...)`
+- request caching, request logging, and typed `cast=...` hydration
+- `ApiHTTPError` and `SSEEvent`
+- sync lifecycle and v1 limitations
+
+### [APIMODEL.md](APIMODEL.md) — `@apimodel`
+
+Focused guide for pypercache's annotation-driven API models.
+
+- `@apimodel` basics
+- `Alias(...)` for raw API field names
+- `Timestamp(...)` for datetime hydration
+- using `apimodel` classes with `ApiWrapper` and `Cache`
+- pointer to the fuller `CACHE.md` reference section
 
 ### [QUERY.md](QUERY.md) — JsonInjester / record.query
 
@@ -126,6 +148,24 @@ class UserList:
 
 cache.store("users:v1", {"users": [{"name": "Ada"}]}, expiry=3600, cast=UserList)
 users = cache.get_object("users:v1")   # UserList instance
+```
+
+For annotation-driven API response models, `@apimodel` can read raw API keys through aliases and parse timestamp fields into `datetime` objects:
+
+```python
+from datetime import datetime
+from typing import Annotated
+
+from pypercache.models.apimodel import Alias, Timestamp, apimodel
+
+@apimodel
+class User:
+    display_name: Annotated[str, Alias("displayName")]
+    created_at: Annotated[datetime, Alias("createdAt"), Timestamp()]
+
+user = User({"displayName": "Ada", "createdAt": "2026-04-19T12:34:56Z"})
+print(user.display_name)  # Ada
+print(user.created_at.isoformat())  # 2026-04-19T12:34:56+00:00
 ```
 
 ### Query navigation

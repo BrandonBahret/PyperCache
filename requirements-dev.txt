@@ -1,6 +1,0 @@
-pytest>=8.0.0
-build>=0.10.0
-twine>=4.0.0
-lark>=1.1.0
-jsonpickle>=3.0.0
-msgpack>=1.0.0

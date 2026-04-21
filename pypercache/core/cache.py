@@ -124,3 +124,9 @@ class Cache:
     def completely_erase_cache(self):
         """Permanently delete all records from the cache storage."""
         self.storage.erase_everything()
+
+    def close(self):
+        """Close the underlying storage backend when it supports lifecycle hooks."""
+        close = getattr(self.storage, "close", None)
+        if callable(close):
+            close()

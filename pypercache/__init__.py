@@ -11,6 +11,7 @@ Utility sub-packages are importable directly when needed::
     from pypercache.storage import get_storage_mechanism
 """
 
+from .api_wrapper import ApiHTTPError, ApiWrapper, ApiWrapperError, SSEEvent
 from .core.cache import Cache
 from .core.cache_record import CacheRecord
 from .core.request_logger import LogRecord, RequestLogger
@@ -18,8 +19,12 @@ from .core.request_logger import LogRecord, RequestLogger
 __version__ = "0.1.4"
 
 __all__ = [
+    "ApiHTTPError",
+    "ApiWrapper",
+    "ApiWrapperError",
     "Cache",
     "CacheRecord",
     "LogRecord",
     "RequestLogger",
+    "SSEEvent",
 ]
