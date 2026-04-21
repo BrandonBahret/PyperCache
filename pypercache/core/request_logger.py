@@ -37,8 +37,7 @@ class RequestLogger:
 
     File format: one JSON object per line (JSONL). Each call to ``log()``
     appends a single line — an O(1) operation regardless of how many records
-    the file already contains. Legacy files written as a JSON array are
-    detected on load and migrated transparently.
+    the file already contains.
     """
 
     def __init__(self, filepath: str | None = None) -> None:
@@ -74,7 +73,7 @@ class RequestLogger:
 
     @staticmethod
     def _load(path: Path) -> List[LogRecord]:
-        """Parse records from *path*, handling both JSONL and legacy JSON-array format."""
+        """Parse records from *path* as JSONL."""
         content = path.read_text().strip()
         if not content:
             return []
@@ -90,18 +89,4 @@ class RequestLogger:
                     records.append(parsed)
             return [LogRecord(r) for r in records]
         except (json.JSONDecodeError, ValueError):
-            pass
-
-        try:
-            records = json.loads(content)
-            if isinstance(records, list):
-                log_records = [LogRecord(r) for r in records if isinstance(r, dict)]
-                with open(path, "w") as fp:
-                    for lr in log_records:
-                        fp.write(json.dumps(lr.as_dict()))
-                        fp.write("\n")
-                return log_records
-        except json.JSONDecodeError:
-            pass
-
-        return []
+            return []

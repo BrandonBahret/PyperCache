@@ -92,27 +92,28 @@ class TestRequestLoggerLoading:
         logger = RequestLogger(filepath=tmp_log)
         assert logger.records == []
 
-    def test_legacy_json_array_migrated(self, legacy_log_file):
-        """Files written as a JSON array are migrated to JSONL on first load."""
+    def test_legacy_json_array_is_not_loaded(self, legacy_log_file):
         logger = RequestLogger(filepath=legacy_log_file)
-        assert len(logger.records) == 2
+        assert logger.records == []
 
-        # File must now be JSONL format
-        lines = [l for l in Path(legacy_log_file).read_text().splitlines() if l.strip()]
-        assert len(lines) == 2
-        json.loads(lines[0])   # must be a valid JSON object
+        content = Path(legacy_log_file).read_text().strip()
+        parsed = json.loads(content)
+        assert isinstance(parsed, list)
 
-    def test_legacy_migration_preserves_data(self, legacy_log_file):
+    def test_legacy_json_array_is_left_untouched(self, legacy_log_file):
         logger = RequestLogger(filepath=legacy_log_file)
-        uris = {r.data["uri"] for r in logger.records}
-        assert "/old/1" in uris
-        assert "/old/2" in uris
+        assert logger.records == []
+        original = json.loads(Path(legacy_log_file).read_text())
+        assert len(original) == 2
 
-    def test_subsequent_writes_after_migration_are_jsonl(self, legacy_log_file):
+    def test_subsequent_writes_append_without_migrating_legacy_json_array(
+        self, legacy_log_file
+    ):
         logger = RequestLogger(filepath=legacy_log_file)
         logger.log("/new/endpoint", 201)
-        lines = [l for l in Path(legacy_log_file).read_text().splitlines() if l.strip()]
-        assert len(lines) == 3   # 2 migrated + 1 new
+        content = Path(legacy_log_file).read_text()
+        assert '"/new/endpoint"' in content
+        assert content.startswith("[")
 
 
 # ---------------------------------------------------------------------------

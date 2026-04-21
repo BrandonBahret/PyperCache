@@ -291,7 +291,7 @@ print(repr(record))
 
 ### File format
 
-The log file is JSONL (one JSON object per line). If `RequestLogger` encounters a legacy file written as a single JSON array, it detects and migrates it transparently on load, rewriting it as JSONL in place.
+The log file is JSONL (one JSON object per line). `RequestLogger` reads only that format and does not migrate older JSON-array log files.
 
 ### Usage alongside Cache
 
