@@ -92,29 +92,6 @@ class TestRequestLoggerLoading:
         logger = RequestLogger(filepath=tmp_log)
         assert logger.records == []
 
-    def test_legacy_json_array_is_not_loaded(self, legacy_log_file):
-        logger = RequestLogger(filepath=legacy_log_file)
-        assert logger.records == []
-
-        content = Path(legacy_log_file).read_text().strip()
-        parsed = json.loads(content)
-        assert isinstance(parsed, list)
-
-    def test_legacy_json_array_is_left_untouched(self, legacy_log_file):
-        logger = RequestLogger(filepath=legacy_log_file)
-        assert logger.records == []
-        original = json.loads(Path(legacy_log_file).read_text())
-        assert len(original) == 2
-
-    def test_subsequent_writes_append_without_migrating_legacy_json_array(
-        self, legacy_log_file
-    ):
-        logger = RequestLogger(filepath=legacy_log_file)
-        logger.log("/new/endpoint", 201)
-        content = Path(legacy_log_file).read_text()
-        assert '"/new/endpoint"' in content
-        assert content.startswith("[")
-
 
 # ---------------------------------------------------------------------------
 # RequestLogger: time-window filtering

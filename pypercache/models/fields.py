@@ -28,8 +28,8 @@ class Columns:
 
     Use inside ``typing.Annotated`` for eager or lazy fields::
 
-        hourly: Annotated[list[HourlyPoint], Alias("hourly"), Columns()]
-        daily: Lazy[Annotated[list[DailyPoint], Alias("daily"), Columns(required=("time",))]]
+        hourly: Annotated[list[HourlyPoint], Columns()]
+        daily: Lazy[Annotated[list[DailyPoint], Columns(required=("time",))]]
     """
 
     def __init__(self, required: tuple[str, ...] = ()) -> None:

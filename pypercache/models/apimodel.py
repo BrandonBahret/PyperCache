@@ -58,31 +58,9 @@ def _model_eq(self: Any, other: Any) -> bool:
     return self.as_dict() == other.as_dict()
 
 
-def _unwrap_alias(annotation: Any) -> tuple[Any, str | None]:
-    """Return ``(base_annotation, raw_key_alias)`` for annotated fields."""
-    base_annotation, alias, _, _ = _unwrap_field_config(annotation)
-    return base_annotation, alias
-
-
 def _unwrap_field_config(annotation: Any) -> tuple[Any, str | None, Timestamp | None, Columns | None]:
     """Return ``(base_annotation, raw_key_alias, timestamp_parser)``."""
     return unwrap_field_config(annotation)
-
-
-def _unwrap_lazy(annotation: Any) -> tuple[Any, str | None] | None:
-    """If *annotation* is ``Lazy[...]``, return ``(inner_type, alias)``.
-
-    Handles both plain ``Lazy[T]`` and ``Lazy[Annotated[T, Alias(...)]]``.
-    Returns ``None`` for non-lazy annotations so call-sites stay readable.
-    """
-    if get_origin(annotation) is not Lazy:
-        return None
-
-    (inner,) = get_args(annotation)  # Lazy always has exactly one arg
-
-    base_annotation, alias, _, _ = _unwrap_field_config(inner)
-    return base_annotation, alias
-
 
 def _unwrap_lazy_config(
     annotation: Any,
@@ -106,16 +84,9 @@ def _instantiate_field_value(
         instantiator=instantiate_type,
     )
 
-
 def _write_raw_value(data: dict, raw_key: str, value: Any) -> None:
     """Write *value* into *data*, respecting dot-separated raw key paths."""
     write_raw_value(data, raw_key, value)
-
-
-def _as_raw_value(value: Any, timestamp: Timestamp | None = None) -> Any:
-    """Return the payload-shaped value to store in the backing raw dict."""
-    return as_raw_value(value, timestamp=timestamp)
-
 
 def apimodel(
     cls: T | None = None,
@@ -181,8 +152,8 @@ def apimodel(
         annotations = own_annotations
 
     # ------------------------------------------------------------------ #
-    # Split annotations into eager vs lazy at decoration time -           #
-    # this work is done once, not on every instantiation.                 #
+    # Split annotations into eager vs lazy at decoration time -          #
+    # this work is done once, not on every instantiation.                #
     # ------------------------------------------------------------------ #
     eager_fields: dict[str, tuple[Any, str | None, Timestamp | None, Columns | None]] = {}
     lazy_fields: dict[str, tuple[Any, str | None, Timestamp | None, Columns | None]] = {}
@@ -211,7 +182,7 @@ def apimodel(
         )
 
     # ------------------------------------------------------------------ #
-    # Generated methods                                                    #
+    # Generated methods                                                  #
     # ------------------------------------------------------------------ #
 
     def __init__(self, data: dict) -> None:

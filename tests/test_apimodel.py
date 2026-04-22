@@ -24,9 +24,7 @@ from pypercache.models.apimodel import (
     ApiModelValidationError,
     apimodel,
     _model_eq,
-    _model_repr,
-    _unwrap_alias,
-    _unwrap_lazy,
+    _model_repr
 )
 from pypercache.utils import UNSET
 from pypercache.utils.typing_cast import instantiate_type as _real_instantiate_type
@@ -79,79 +77,7 @@ def _patch_collaborators(monkeypatch):
 
 
 # ===========================================================================
-# Section 1 - _unwrap_lazy
-# ===========================================================================
-
-class TestUnwrapAlias:
-
-    def test_plain_type_has_no_alias(self):
-        inner, alias = _unwrap_alias(int)
-        assert inner is int
-        assert alias is None
-
-    def test_annotated_alias(self):
-        inner, alias = _unwrap_alias(Annotated[int, Alias("raw")])
-        assert inner is int
-        assert alias == "raw"
-
-    def test_multiple_aliases_pick_first(self):
-        inner, alias = _unwrap_alias(Annotated[str, Alias("first"), Alias("second")])
-        assert inner is str
-        assert alias == "first"
-
-    def test_non_alias_metadata_is_ignored(self):
-        inner, alias = _unwrap_alias(Annotated[str, "tag", 42])
-        assert inner is str
-        assert alias is None
-
-
-class TestUnwrapLazy:
-    """Unit tests for the private _unwrap_lazy helper."""
-
-    def test_plain_type_int_returns_none(self):
-        assert _unwrap_lazy(int) is None
-
-    def test_plain_type_str_returns_none(self):
-        assert _unwrap_lazy(str) is None
-
-    def test_plain_type_list_returns_none(self):
-        assert _unwrap_lazy(list) is None
-
-    def test_none_literal_returns_none(self):
-        assert _unwrap_lazy(None) is None
-
-    def test_annotated_without_lazy_returns_none(self):
-        """Annotated[T, x] that is NOT wrapped in Lazy must not be treated as lazy."""
-        assert _unwrap_lazy(Annotated[int, "metadata"]) is None
-
-    def test_plain_lazy_int_inner_type(self):
-        inner, alias = _unwrap_lazy(Lazy[int])
-        assert inner is int
-        assert alias is None
-
-    def test_plain_lazy_list_str(self):
-        inner, _ = _unwrap_lazy(Lazy[list[str]])
-        assert inner == list[str]
-
-    def test_lazy_annotated_alias(self):
-        inner, alias = _unwrap_lazy(Lazy[Annotated[str, Alias("raw")]])
-        assert inner is str
-        assert alias == "raw"
-
-    def test_non_alias_annotated_metadata_does_not_crash(self):
-        """Stray metadata objects inside Annotated must be silently ignored."""
-        inner, alias = _unwrap_lazy(Lazy[Annotated[str, "tag", 42]])
-        assert inner is str
-        assert alias is None
-
-    def test_alias_mixed_with_other_metadata_is_found(self):
-        ann = Lazy[Annotated[str, "tag", Alias("x"), object()]]
-        _, alias = _unwrap_lazy(ann)
-        assert alias == "x"
-
-
-# ===========================================================================
-# Section 2 - @apimodel basic construction
+# Section 1 - @apimodel basic construction
 # ===========================================================================
 
 class TestApimodelConstruction:
@@ -646,7 +572,7 @@ class TestApimodelConstruction:
 
 
 # ===========================================================================
-# Section 3 - Lazy field basic behaviour
+# Section 2 - Lazy field basic behaviour
 # ===========================================================================
 
 class TestLazyBasics:
@@ -833,7 +759,7 @@ class TestLazyBasics:
 
 
 # ===========================================================================
-# Section 4 - Alias
+# Section 3 - Alias
 # ===========================================================================
 
 class TestAlias:
@@ -1002,7 +928,7 @@ class TestTimestamp:
 
 
 # ===========================================================================
-# Section 6 - Explicit assignment and deletion
+# Section 4 - Explicit assignment and deletion
 # ===========================================================================
 
 class TestDescriptorSetDelete:
@@ -1149,7 +1075,7 @@ class TestDescriptorSetDelete:
 
 
 # ===========================================================================
-# Section 7 - Descriptor isolation
+# Section 5 - Descriptor isolation
 # ===========================================================================
 
 class TestDescriptorIsolation:
@@ -1179,7 +1105,7 @@ class TestDescriptorIsolation:
 
 
 # ===========================================================================
-# Section 8 - Falsy / edge-case values
+# Section 6 - Falsy / edge-case values
 # ===========================================================================
 
 class TestEdgeCaseValues:
@@ -1290,7 +1216,7 @@ class TestEdgeCaseValues:
 
 
 # ===========================================================================
-# Section 9 - LazyDescriptor unit tests (direct)
+# Section 7 - LazyDescriptor unit tests (direct)
 # ===========================================================================
 
 class TestLazyDescriptorDirect:
