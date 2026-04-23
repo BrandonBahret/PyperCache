@@ -15,7 +15,7 @@ PyperCache is a durable, file-backed cache for JSON-like Python data.
 ## Installation
 
 
-Install from PyPI:
+Install from [PyPI](https://pypi.org/project/pypercache/):
 
 ```bash
 pip install pypercache
