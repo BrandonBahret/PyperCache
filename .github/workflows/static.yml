@@ -26,7 +26,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: https://github.com/BrandonBahret/PyperCache/blob/master/docs/pypercache-docs.html
+      url: https://github.com/BrandonBahret/PyperCache/blob/master/docs/index.html
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
