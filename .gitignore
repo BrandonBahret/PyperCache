@@ -1,6 +1,7 @@
 .github/
 test-caches/
 --*.py
+.obsidian
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -111,3 +112,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+node_modules/
+.npm-cache/
+.pip-cache/
+.hf-cache/
+.tmp/

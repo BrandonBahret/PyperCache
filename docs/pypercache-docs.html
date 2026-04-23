@@ -1,0 +1,3269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<title>PyperCache — Docs</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #16161a;
+    --border: #2a2a30;
+    --border-subtle: #1e1e24;
+    --text: #e8e8ec;
+    --text-dim: #888898;
+    --text-dimmer: #555568;
+    --accent: #c8f060;
+    --accent-dim: #a8cc45;
+    --accent-glow: rgba(200,240,96,0.12);
+    --accent2: #60b8f0;
+    --accent2-dim: rgba(96,184,240,0.15);
+    --red: #f06060;
+    --sidebar-w: 260px;
+    --code-bg: #111115;
+    --radius: 6px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── LAYOUT ── */
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo-name {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(200,240,96,0.25);
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  .logo-tagline {
+    font-size: 12px;
+    color: var(--text-dimmer);
+    margin-top: 4px;
+    font-weight: 300;
+  }
+
+  nav {
+    padding: 16px 0 24px;
+    flex: 1;
+  }
+
+  .nav-group {
+    margin-bottom: 4px;
+  }
+
+  .nav-group-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    padding: 10px 20px 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 20px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 400;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+    margin: 0 0 1px;
+    cursor: pointer;
+  }
+
+  .nav-link:hover {
+    color: var(--text);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .nav-link.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .nav-link .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .nav-link.active .dot { background: var(--accent); }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(14,14,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 48px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    gap: 15px;
+  }
+
+  .breadcrumb {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dimmer);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .breadcrumb span { color: var(--text-dim); }
+
+  .topbar-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-dimmer);
+  }
+
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    min-width: 240px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.02);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+
+  .search-trigger:hover {
+    border-color: rgba(200,240,96,0.35);
+    background: rgba(200,240,96,0.06);
+    color: var(--text);
+  }
+
+  .search-trigger-label {
+    font-size: 13px;
+    font-weight: 300;
+    flex: 1;
+    text-align: left;
+  }
+
+  .search-trigger-kbd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: var(--text-dimmer);
+  }
+
+  /* ── CONTENT ── */
+  .content-outer {
+    flex: 1;
+    padding: 56px 48px 80px;
+    max-width: 860px;
+  }
+
+  /* Page hero */
+  .page-hero {
+    margin-bottom: 52px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .page-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 300;
+    letter-spacing: -1px;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .page-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .page-lead {
+    font-size: 17px;
+    color: var(--text-dim);
+    line-height: 1.65;
+    font-weight: 300;
+    max-width: 600px;
+  }
+
+  /* Sections */
+  .section {
+    display: none;
+  }
+  .section.active {
+    display: block;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Content elements */
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    margin: 44px 0 14px;
+    line-height: 1.25;
+  }
+
+  h2:first-child { margin-top: 0; }
+
+  h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent2);
+    letter-spacing: 0.03em;
+    margin: 32px 0 10px;
+    text-transform: uppercase;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin: 20px 0 8px;
+  }
+
+  p {
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    font-weight: 300;
+  }
+
+  p strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .doc-link {
+    color: var(--accent2);
+    text-decoration: underline;
+    text-decoration-color: rgba(96,184,240,0.45);
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .doc-link:hover {
+    color: #8ecdf6;
+    text-decoration-color: currentColor;
+  }
+
+  /* Code */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 16px 0 24px;
+    position: relative;
+  }
+
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dimmer);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+
+  pre[data-lang]:hover::before,
+  pre[data-lang]:focus-within::before {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+
+  .copy-code-button {
+    position: absolute;
+    top: 7px;
+    right: 10px;
+    height: 26px;
+    padding: 0 8px 0 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(200,240,96,0.28);
+    border-radius: 999px;
+    background: rgba(17,17,21,0.92);
+    color: var(--text-dim);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity 0.15s, transform 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+    z-index: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .copy-code-button-label {
+    line-height: 1;
+  }
+
+  pre[data-lang]:hover .copy-code-button,
+  pre[data-lang]:focus-within .copy-code-button {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .copy-code-button:hover,
+  .copy-code-button:focus-visible {
+    color: var(--accent);
+    border-color: rgba(200,240,96,0.55);
+    background: rgba(200,240,96,0.08);
+    outline: none;
+  }
+
+  .copy-code-button.copied {
+    color: var(--accent);
+    border-color: rgba(200,240,96,0.65);
+    background: rgba(200,240,96,0.12);
+  }
+
+  .copy-code-button svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #c0c0d0;
+  }
+
+  p code, li code {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #d4d4e8;
+  }
+
+  code.inline-code-ref {
+    transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+
+  body.mod-nav-active code.inline-code-ref {
+    border-color: rgba(96,184,240,0.3);
+  }
+
+  body.mod-nav-active code.inline-code-ref:hover {
+    cursor: pointer;
+    color: #eef6ff;
+    background: rgba(96,184,240,0.12);
+    border-color: rgba(96,184,240,0.55);
+    box-shadow: 0 0 0 1px rgba(96,184,240,0.18);
+  }
+
+  /* Syntax highlight tokens */
+  .kw { color: #bb86fc; }
+  .fn { color: #82b4ff; }
+  .cl { color: var(--accent); }
+  .st { color: #a8e6a3; }
+  .cm { color: var(--text-dimmer); font-style: italic; }
+  .num { color: #ffb347; }
+  .dc { color: #f0a0a0; }
+
+  /* Callouts */
+  .callout {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    background: var(--accent-glow);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  .callout.info {
+    border-left-color: var(--accent2);
+    background: var(--accent2-dim);
+  }
+
+  .callout.warn {
+    border-left-color: var(--red);
+    background: rgba(240,96,96,0.08);
+  }
+
+  .callout strong { color: var(--text); font-weight: 500; }
+
+  /* Choice cards */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0 32px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    background: rgba(200,240,96,0.04);
+  }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 13.5px;
+  }
+
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-dimmer);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-dim);
+    vertical-align: top;
+  }
+
+  td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+
+  td strong { color: var(--text); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Method signatures */
+  .method {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 12px 0 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .method .mname { color: #82b4ff; font-weight: 600; }
+  .method .mparam { color: var(--text-dim); }
+  .method .mtype { color: var(--accent); }
+  .method .mdefault { color: var(--text-dimmer); }
+
+  /* Lists */
+  ul, ol {
+    padding-left: 20px;
+    margin: 10px 0 18px;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  li { margin-bottom: 5px; }
+  li code { font-size: 12px; }
+
+  /* Selector reference */
+  .selector-row {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .selector-syntax {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    min-width: 180px;
+    flex-shrink: 0;
+  }
+
+  .selector-desc {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  /* Dividers */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 36px 0;
+  }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 20px 0 32px;
+  }
+
+  .feature-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .feature-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(200,240,96,0.2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .feature-text strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .feature-text span {
+    font-size: 12px;
+    color: var(--text-dimmer);
+    font-weight: 300;
+  }
+
+  /* Mobile */
+  .menu-toggle {
+    display: none;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .search-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.7);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 72px 24px 24px;
+    z-index: 200;
+  }
+
+  .search-modal.open {
+    display: flex;
+  }
+
+  .search-panel {
+    width: min(920px, 100%);
+    max-height: calc(100vh - 96px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #111317;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+  }
+
+  .search-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .search-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .search-input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    padding: 14px 0;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-dimmer);
+  }
+
+  .search-close {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .search-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    padding: 0 18px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-dimmer);
+    font-size: 12px;
+  }
+
+  .search-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-dimmer);
+  }
+
+  .search-results {
+    padding: 10px 12px 14px;
+    overflow-y: auto;
+  }
+
+  .search-answer {
+    border: 1px solid rgba(96,184,240,0.2);
+    background: rgba(96,184,240,0.08);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    margin-bottom: 12px;
+  }
+
+  .search-answer-title {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .search-answer-title strong {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .search-answer-body {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .search-answer-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(96,184,240,0.15);
+    background: rgba(255,255,255,0.02);
+    color: var(--text-dim);
+    border-radius: 12px;
+    padding: 12px 13px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  }
+
+  .search-answer-link:hover {
+    border-color: rgba(96,184,240,0.28);
+    background: rgba(255,255,255,0.05);
+    transform: translateY(-1px);
+  }
+
+  .search-answer-link strong {
+    color: var(--text);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .search-answer-link span {
+    display: block;
+  }
+
+  .search-answer-source {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dimmer);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .search-answer-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .search-empty {
+    padding: 36px 20px 44px;
+    color: var(--text-dim);
+  }
+
+  .search-empty strong {
+    color: var(--text);
+  }
+
+  .search-result {
+    border: 1px solid transparent;
+    border-radius: 14px;
+    padding: 14px 14px 16px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  }
+
+  .search-result:hover,
+  .search-result.active {
+    border-color: rgba(200,240,96,0.28);
+    background: rgba(200,240,96,0.06);
+    transform: translateY(-1px);
+  }
+
+  .search-result-top {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .search-result-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .search-result-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dimmer);
+  }
+
+  .search-result-title {
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .search-result-preview {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .search-result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .search-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dimmer);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 8px;
+  }
+
+  mark.search-hit {
+    background: rgba(200,240,96,0.2);
+    color: var(--text);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  .search-target-glow {
+    border-radius: 10px;
+    animation: searchTargetGlow 1.8s ease-out;
+  }
+
+  @keyframes searchTargetGlow {
+    0% {
+      background: transparent;
+      box-shadow: 0 0 0 0 rgba(200,240,96,0);
+    }
+    18% {
+      background: rgba(200,240,96,0.08);
+      box-shadow: 0 0 0 2px rgba(200,240,96,0.42), 0 0 28px rgba(200,240,96,0.2);
+    }
+    100% {
+      background: transparent;
+      box-shadow: 0 0 0 0 rgba(200,240,96,0);
+    }
+  }
+
+  @media (max-width: 820px) {
+    .sidebar {
+      position: fixed;
+      left: -280px;
+      top: 0;
+      z-index: 100;
+      transition: left 0.25s ease;
+      width: 260px;
+    }
+
+    .sidebar.open { left: 0; }
+
+    .menu-toggle { display: block; }
+
+    .content-outer { padding: 32px 24px 60px; }
+    .topbar { padding: 0 24px; }
+    .topbar-left { gap: 10px; }
+    .search-trigger { min-width: 0; width: auto; }
+    .search-trigger-kbd { display: none; }
+    .search-toolbar { flex-direction: column; }
+
+    .cards, .feature-grid { grid-template-columns: 1fr; }
+
+    .page-title { font-size: 30px; }
+    .page-lead { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-name">
+        PyperCache
+        <span class="logo-pill">v0.1.5</span>
+      </div>
+      <div class="logo-tagline">Durable cache for JSON-like data</div>
+    </div>
+
+    <nav>
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <a class="nav-link active" onclick="show('overview')">
+          <span class="dot"></span> Introduction
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Tutorials</div>
+        <a class="nav-link" onclick="show('tutorial-jsonplaceholder')">
+          <span class="dot"></span> JSONPlaceholder walkthrough
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Using the Cache</div>
+        <a class="nav-link" onclick="show('cache-basics')">
+          <span class="dot"></span> Store &amp; retrieve data
+        </a>
+        <a class="nav-link" onclick="show('storage-backends')">
+          <span class="dot"></span> Storage backends
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">API Clients</div>
+        <a class="nav-link" onclick="show('api-wrapper')">
+          <span class="dot"></span> ApiWrapper
+        </a>
+        <a class="nav-link" onclick="show('building-blocks')">
+          <span class="dot"></span> Lower-level pieces
+        </a>
+        <a class="nav-link" onclick="show('typed-models')">
+          <span class="dot"></span> Typed models
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Query Layer</div>
+        <a class="nav-link" onclick="show('json-injester')">
+          <span class="dot"></span> JsonInjester
+        </a>
+        <a class="nav-link" onclick="show('selector-guide')">
+          <span class="dot"></span> Selector syntax
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Reference</div>
+        <a class="nav-link" onclick="show('ref-cache')">
+          <span class="dot"></span> Cache API
+        </a>
+        <a class="nav-link" onclick="show('ref-apiwrapper')">
+          <span class="dot"></span> ApiWrapper API
+        </a>
+        <a class="nav-link" onclick="show('ref-apimodel')">
+          <span class="dot"></span> @apimodel API
+        </a>
+        <a class="nav-link" onclick="show('ref-storage')">
+          <span class="dot"></span> Storage &amp; logging
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="breadcrumb" id="breadcrumb">
+          pypercache <span>/</span> introduction
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="search-trigger" type="button" onclick="openSearchModal()">
+          <span aria-hidden="true">Search</span>
+          <span class="search-trigger-label">Search docs, types, examples...</span>
+          <span class="search-trigger-kbd">Ctrl K</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content-outer">
+
+      <!-- ══════════════════════════════════════ OVERVIEW -->
+      <div class="section active" id="section-overview">
+        <div class="page-hero">
+          <div class="page-tag">Getting started</div>
+          <h1 class="page-title">PyperCache<em>.</em></h1>
+          <p class="page-lead">A durable, file-backed cache for JSON-like Python data — with optional typed hydration, a query layer for navigating nested payloads, and an <code>ApiWrapper</code> base class for building HTTP clients.</p>
+        </div>
+
+        <h2>Installation</h2>
+        <p>Install from <a href="https://pypi.org/project/pypercache/" target="_blank">PyPI:</a></p>
+        <pre data-lang="bash"><code>pip install pypercache</code></pre>
+        <p>Or install from source:</p>
+        <pre data-lang="bash"><code>git clone https://github.com/BrandonBahret/PyperCache.git
+cd PyperCache
+pip install .</code></pre>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="feature-icon">💾</div>
+            <div class="feature-text">
+              <strong>Persistent storage</strong>
+              <span>Pickle, JSON, SQLite, or chunked backends</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">⏱</div>
+            <div class="feature-text">
+              <strong>TTL freshness</strong>
+              <span>Per-record expiry with <code>is_data_fresh()</code></span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-text">
+              <strong>JsonInjester</strong>
+              <span>Dot-path selector language for nested dicts</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🏷</div>
+            <div class="feature-text">
+              <strong>Typed hydration</strong>
+              <span><code>@apimodel</code> for aliases, timestamps, lazy fields</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-text">
+              <strong>ApiWrapper</strong>
+              <span>HTTP client base class with built-in cache integration</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">📋</div>
+            <div class="feature-text">
+              <strong>Request logging</strong>
+              <span>JSONL audit records via <code>RequestLogger</code></span>
+            </div>
+          </div>
+        </div>
+
+        <h2>How the pieces fit together</h2>
+        <p>At the center is <code>Cache</code>, which stores keyed records to disk and hands back <code>CacheRecord</code> objects. Each record exposes a <code>.query</code> property — a <code>JsonInjester</code> over the stored payload — so you can navigate the data without writing chains of <code>dict.get()</code> calls.</p>
+        <p><code>@apimodel</code> sits on top of that: decorate a class and it gains a dict-accepting constructor, automatic nested hydration, field aliases, timestamp parsing, and lazy fields. You pass a model as <code>cast=MyModel</code> when storing, then retrieve a fully typed object via <code>cache.get_object()</code>.</p>
+        <p><code>ApiWrapper</code> composes everything — <code>requests</code>, <code>Cache</code>, and optionally <code>RequestLogger</code> — into a base class. Subclass it, add thin endpoint methods, and you have an HTTP client that caches <code>GET</code> responses and hydrates them automatically.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> Cache, RequestLogger
+<span class="kw">from</span> pypercache.api_wrapper <span class="kw">import</span> ApiWrapper
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Columns, Timestamp, apimodel
+<span class="kw">from</span> pypercache.models.lazy <span class="kw">import</span> Lazy
+<span class="kw">from</span> pypercache.query <span class="kw">import</span> JsonInjester</code></pre>
+
+        <h2>Choose your starting point</h2>
+        <div class="cards">
+          <div class="card" onclick="show('cache-basics')">
+            <div class="card-title">→ Just the cache</div>
+            <div class="card-desc">Persist data between runs, check staleness, optionally hydrate into typed objects. No HTTP involved.</div>
+          </div>
+          <div class="card" onclick="show('api-wrapper')">
+            <div class="card-title">→ Building an API client</div>
+            <div class="card-desc">Subclass <code>ApiWrapper</code> for HTTP clients with automatic GET caching and typed response models.</div>
+          </div>
+          <div class="card" onclick="show('json-injester')">
+            <div class="card-title">→ Just the query layer</div>
+            <div class="card-desc">Use <code>JsonInjester</code> standalone to navigate large nested payloads without repetitive dict access.</div>
+          </div>
+          <div class="card" onclick="show('building-blocks')">
+            <div class="card-title">→ Custom integration</div>
+            <div class="card-desc">Bring your own HTTP transport and compose <code>Cache</code>, <code>@apimodel</code>, and <code>JsonInjester</code> yourself.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ CACHE BASICS -->
+      <div class="section" id="section-tutorial-jsonplaceholder">
+        <div class="page-hero">
+          <div class="page-tag">Tutorials</div>
+          <h1 class="page-title">Walk through a small <em>API client</em></h1>
+          <p class="page-lead">The <code>examples/jsonplaceholder_api</code> example is the shortest end-to-end wrapper in the repository. It shows the full PyperCache workflow: define typed models, subclass <code>ApiWrapper</code>, let <code>GET</code> requests cache automatically, and opt out of cache for a mutating <code>POST</code>.</p>
+        </div>
+
+        <h2>Why this example is the right starting point</h2>
+        <p>JSONPlaceholder is intentionally simple in the best possible way. There is one base URL, no authentication, and small JSON payloads with predictable structure. That makes it a good teaching surface for the core wrapper pattern without introducing concerns like OAuth, pagination cursors, or multi-origin routing.</p>
+        <p>The goal of the example is not to exercise every PyperCache feature. It is to show the smallest realistic client you can copy into a real project and then extend.</p>
+
+        <h2>Start with models that match the payloads you already have</h2>
+        <p>The wrapper begins with a few response models. Each one is decorated with <code>@apimodel(validate=True)</code>, which means incoming JSON is hydrated into typed Python objects and checked against the annotated field types during construction.</p>
+        <p>Where the upstream API uses camelCase keys, the example maps them into snake_case attributes with <code>Alias(...)</code>. That keeps the Python surface conventional without forcing you to rewrite the raw payload format.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> typing <span class="kw">import</span> Annotated
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">Post</span>:
+    user_id: <span class="cl">Annotated</span>[int, <span class="cl">Alias</span>(<span class="st">"userId"</span>)]
+    id: int
+    title: str
+    body: str
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">Company</span>:
+    name: str
+    catch_phrase: <span class="cl">Annotated</span>[str, <span class="cl">Alias</span>(<span class="st">"catchPhrase"</span>)]
+    bs: str</code></pre>
+
+        <p>Nested response objects work the same way. The <code>User</code> model contains an <code>Address</code>, which contains a <code>Geo</code>, and hydration recursively builds those child objects for you.</p>
+
+        <h2>Wrap the API in thin endpoint methods</h2>
+        <p>Once the models exist, the wrapper class stays small. Its constructor passes a single origin, a cache path, and a default expiry to <code>ApiWrapper</code>. After that, each endpoint is just a thin method around <code>request()</code>.</p>
+
+        <pre data-lang="python"><code><span class="kw">class</span> <span class="cl">JSONPlaceholderClient</span>(<span class="cl">ApiWrapper</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self) -> <span class="kw">None</span>:
+        <span class="fn">super()</span>.<span class="fn">__init__</span>(
+            origins={<span class="st">"default"</span>: <span class="st">"https://jsonplaceholder.typicode.com"</span>},
+            default_origin=<span class="st">"default"</span>,
+            cache_path=<span class="st">"jsonplaceholder_cache.json"</span>,
+            default_expiry=<span class="num">300</span>,
+            request_log_path=<span class="st">"jsonplaceholder_requests.log"</span>,
+        )
+
+    <span class="kw">def</span> <span class="fn">get_post</span>(self, post_id: int) -> <span class="cl">Post</span>:
+        <span class="kw">return</span> self.<span class="fn">request</span>(<span class="st">"GET"</span>, f<span class="st">"/posts/{post_id}"</span>, expected=<span class="st">"json"</span>, cast=<span class="cl">Post</span>)
+
+    <span class="kw">def</span> <span class="fn">list_post_comments</span>(self, post_id: int) -> list[<span class="cl">Comment</span>]:
+        <span class="kw">return</span> self.<span class="fn">request</span>(
+            <span class="st">"GET"</span>,
+            f<span class="st">"/posts/{post_id}/comments"</span>,
+            expected=<span class="st">"json"</span>,
+            cast=list[<span class="cl">Comment</span>],
+        )</code></pre>
+
+        <p>This is the part worth internalizing: the endpoint methods describe intent, not plumbing. You name the HTTP method, path, expected response type, and the model to hydrate into. URL joining, JSON decoding, cache lookup, cache writeback, and object construction are handled underneath.</p>
+
+        <div class="callout info"><strong>Related docs:</strong> The pieces used here are documented in <a class="doc-link" href="#section-api-wrapper" onclick="show('api-wrapper'); return false;"><code>Build with ApiWrapper</code></a> for the wrapper pattern, <a class="doc-link" href="#section-typed-models" onclick="show('typed-models'); return false;"><code>Typed models</code></a> for <code>@apimodel</code> and <code>Alias</code>, and <a class="doc-link" href="#section-ref-apiwrapper" onclick="show('ref-apiwrapper'); return false;"><code>ApiWrapper API</code></a> for the exact <code>request()</code> signature.</div>
+
+        <h2>Let cached GETs make the second call boring</h2>
+        <p>The companion <code>app.py</code> script demonstrates the runtime behavior. It first fetches post <code>#1</code>, then immediately fetches the same post again. Because the method is a <code>GET</code> with <code>expected="json"</code>, PyperCache stores the first response and serves the second one from the cache while the entry is still fresh.</p>
+
+        <pre data-lang="python"><code>client = <span class="cl">JSONPlaceholderClient</span>(
+    cache_path=<span class="st">"jsonplaceholder_cache.json"</span>,
+    request_log_path=<span class="st">"jsonplaceholder_requests.log"</span>,
+)
+
+post = client.<span class="fn">get_post</span>(<span class="num">1</span>)
+cached_post = client.<span class="fn">get_post</span>(<span class="num">1</span>)
+
+author = client.<span class="fn">get_user</span>(post.user_id)
+comments = client.<span class="fn">list_post_comments</span>(post.id)
+todo = client.<span class="fn">get_todo</span>(<span class="num">1</span>)</code></pre>
+
+        <p>That sequence is the narrative center of the example. The first request proves the wrapper can fetch and hydrate a resource. The second request proves the cache is active. The follow-up calls show that once you have a typed object back, using fields like <code>post.user_id</code> to drive the next request feels like ordinary Python code rather than manual JSON plumbing.</p>
+
+        <h2>Treat writes differently from reads</h2>
+        <p>The example ends with a <code>create_post()</code> method. This is where the code deliberately opts out of the cache:</p>
+
+        <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">create_post</span>(self, *, user_id: int, title: str, body: str) -> <span class="cl">CreatedPost</span>:
+    <span class="kw">return</span> self.<span class="fn">request</span>(
+        <span class="st">"POST"</span>,
+        <span class="st">"/posts"</span>,
+        expected=<span class="st">"json"</span>,
+        json_body={
+            <span class="st">"userId"</span>: user_id,
+            <span class="st">"title"</span>: title,
+            <span class="st">"body"</span>: body,
+        },
+        use_cache=<span class="kw">False</span>,
+        cast=<span class="cl">CreatedPost</span>,
+    )</code></pre>
+
+        <p>This mirrors the documented caching rule for <code>ApiWrapper.request()</code>: cached responses are for read paths, not mutating calls. The explicit <code>use_cache=False</code> makes that policy visible in the method body, which is useful both as documentation for readers and as protection if the method grows later.</p>
+        <p>JSONPlaceholder itself does not persist the new record, so the point is not durable remote state. The point is to show how request encoding with <code>json_body=...</code> and typed response hydration still work cleanly on the write path.</p>
+
+        <h2>What to copy into your own project</h2>
+        <p>If you are starting a real client, the practical pattern is straightforward: model the responses you care about, subclass <code>ApiWrapper</code>, make each endpoint method one call to <code>request()</code>, and let the cache cover repeatable <code>GET</code> traffic. Add custom headers in <code>get_session()</code> only when the API requires them.</p>
+        <p>When the process exits, call <code>client.close()</code>. That closes the wrapper's cache and flushes pending writes for backends such as SQLite when they are in use.</p>
+      </div>
+
+      <div class="section" id="section-cache-basics">
+        <div class="page-hero">
+          <div class="page-tag">Cache users</div>
+          <h1 class="page-title">Store &amp; retrieve <em>data</em></h1>
+          <p class="page-lead">The core persistence workflow: write a payload by key, check whether it's fresh, and read it back — with optional typed hydration via <code>@apimodel</code>.</p>
+        </div>
+
+        <h2>Create a cache</h2>
+        <p>Pass a file path. The extension determines which storage backend is used.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> Cache
+
+cache = <span class="cl">Cache</span>(filepath=<span class="st">"app_cache.pkl"</span>)</code></pre>
+
+        <p>Omit <code>filepath</code> and it defaults to <code>api-cache.pkl</code> in the working directory.</p>
+
+        <h2>Store and read</h2>
+
+        <pre data-lang="python"><code>cache.<span class="fn">store</span>(<span class="st">"user:1"</span>, {<span class="st">"name"</span>: <span class="st">"Alice"</span>, <span class="st">"role"</span>: <span class="st">"admin"</span>})
+cache.<span class="fn">store</span>(<span class="st">"user:2"</span>, {<span class="st">"name"</span>: <span class="st">"Bob"</span>, <span class="st">"role"</span>: <span class="st">"user"</span>}, expiry=<span class="num">3600</span>)
+
+record = cache.<span class="fn">get</span>(<span class="st">"user:1"</span>)
+print(record.data)          <span class="cm"># the raw payload</span>
+print(record.is_data_stale) <span class="cm"># False — no expiry set</span>
+print(record.expiry)        <span class="cm"># inf</span></code></pre>
+
+        <p><code>get()</code> always returns a <code>CacheRecord</code>. Access <code>.data</code> for the raw payload. It raises <code>KeyError</code> if the key doesn't exist.</p>
+
+        <h2>TTL and freshness</h2>
+        <p>The typical pattern is fetch-or-cache: check freshness, run the expensive work if stale, then read from cache.</p>
+
+        <pre data-lang="python"><code>key = <span class="st">"expensive-result"</span>
+
+<span class="kw">if not</span> cache.<span class="fn">is_data_fresh</span>(key):
+    payload = <span class="fn">run_expensive_work</span>()
+    cache.<span class="fn">store</span>(key, payload, expiry=<span class="num">300</span>)
+
+result = cache.<span class="fn">get</span>(key).data</code></pre>
+
+        <p><code>is_data_fresh()</code> returns <code>False</code> when the key doesn't exist or the record's TTL has elapsed. It never throws.</p>
+
+        <h2>Updating a record</h2>
+        <p><code>update()</code> replaces the payload and refreshes the timestamp while keeping the original expiry and any <code>cast</code> metadata intact.</p>
+
+        <pre data-lang="python"><code>cache.<span class="fn">update</span>(<span class="st">"settings"</span>, {<span class="st">"theme"</span>: <span class="st">"light"</span>, <span class="st">"page_size"</span>: <span class="num">50</span>})</code></pre>
+
+        <div class="callout warn"><strong>Note:</strong> <code>update()</code> raises <code>KeyError</code> if the key doesn't exist. Use <code>store()</code> when you don't know whether the key is there yet.</div>
+
+        <h2>Typed round-trips</h2>
+        <p>Store a record with <code>cast=MyModel</code> and retrieve it as a fully hydrated object using <code>get_object()</code>.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">User</span>:
+    id: int
+    name: str
+
+cache.<span class="fn">store</span>(<span class="st">"user:1"</span>, {<span class="st">"id"</span>: <span class="num">1</span>, <span class="st">"name"</span>: <span class="st">"Ada"</span>}, cast=<span class="cl">User</span>)
+
+user = cache.<span class="fn">get_object</span>(<span class="st">"user:1"</span>)
+print(user.name)  <span class="cm"># "Ada"</span>
+
+cache.<span class="fn">close</span>()</code></pre>
+
+        <div class="callout info"><strong>Tip:</strong> Always call <code>cache.close()</code> when using SQLite (<code>.db</code>) to flush pending writes. It's a no-op for other backends, so it's safe to call regardless.</div>
+
+        <h2>Querying the payload inline</h2>
+        <p>Every <code>CacheRecord</code> exposes a <code>JsonInjester</code> via <code>.query</code>, so you can navigate the stored data without a separate extraction step.</p>
+
+        <pre data-lang="python"><code>cache.<span class="fn">store</span>(<span class="st">"order:1"</span>, {
+    <span class="st">"customer"</span>: {<span class="st">"name"</span>: <span class="st">"Sarah Johnson"</span>},
+    <span class="st">"items"</span>: [
+        {<span class="st">"name"</span>: <span class="st">"Laptop"</span>, <span class="st">"price"</span>: <span class="num">999.99</span>, <span class="st">"category"</span>: <span class="st">"electronics"</span>},
+        {<span class="st">"name"</span>: <span class="st">"Mouse"</span>, <span class="st">"price"</span>: <span class="num">59.99</span>, <span class="st">"category"</span>: <span class="st">"electronics"</span>},
+    ],
+})
+
+q = cache.<span class="fn">get</span>(<span class="st">"order:1"</span>).query
+print(q.<span class="fn">get</span>(<span class="st">"customer.name"</span>))
+print(q.<span class="fn">get</span>(<span class="st">"items?name*"</span>))
+print(q.<span class="fn">get</span>(<span class="st">"items?category=electronics"</span>))</code></pre>
+
+        <h2>Clearing the cache</h2>
+        <pre data-lang="python"><code>cache.<span class="fn">completely_erase_cache</span>()
+print(cache.<span class="fn">has</span>(<span class="st">"user:1"</span>))  <span class="cm"># False</span></code></pre>
+      </div>
+
+      <!-- ══════════════════════════════════════ STORAGE BACKENDS -->
+      <div class="section" id="section-storage-backends">
+        <div class="page-hero">
+          <div class="page-tag">Cache users</div>
+          <h1 class="page-title">Storage <em>backends</em></h1>
+          <p class="page-lead">The backend is selected purely from the file extension. The cache API is identical across all of them.</p>
+        </div>
+
+        <pre data-lang="python"><code>Cache(filepath=<span class="st">"cache.pkl"</span>)      <span class="cm"># Pickle — default</span>
+Cache(filepath=<span class="st">"cache.json"</span>)     <span class="cm"># JSON — human-readable</span>
+Cache(filepath=<span class="st">"cache.manifest"</span>) <span class="cm"># Chunked — large stores</span>
+Cache(filepath=<span class="st">"cache.db"</span>)       <span class="cm"># SQLite — best write behavior</span></code></pre>
+
+        <h2>Quick comparison</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Extension</th>
+              <th>Backend</th>
+              <th>Best for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>.pkl</td>
+              <td><strong>Pickle</strong></td>
+              <td>Default choice. Simple, fast, Python-native serialization. Rewrites the whole file on save.</td>
+            </tr>
+            <tr>
+              <td>.json</td>
+              <td><strong>JSON</strong></td>
+              <td>Human-readable files you want to inspect or diff. Not great for large caches — full rewrite on every save.</td>
+            </tr>
+            <tr>
+              <td>.manifest</td>
+              <td><strong>Chunked</strong></td>
+              <td>Many keys or large payloads. Per-chunk rewrites instead of full-file rewrites. Backed by a directory, not a single file.</td>
+            </tr>
+            <tr>
+              <td>.db</td>
+              <td><strong>SQLite</strong></td>
+              <td>Frequent writes, growing caches, concurrent access. WAL mode with batched flushes — the most operationally robust option.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>SQLite specifics</h2>
+        <p>SQLite loads all rows into memory on open, tracks dirty keys in memory, and flushes in batches. A crash without a clean close can lose the last few seconds of writes. Prefer using it as a context manager:</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.storage <span class="kw">import</span> SQLiteStorage
+
+<span class="kw">with</span> <span class="cl">SQLiteStorage</span>(<span class="st">"cache.db"</span>) <span class="kw">as</span> store:
+    ...</code></pre>
+
+        <p>Or just call <code>cache.close()</code> before your process exits — that's what <code>ApiWrapper.close()</code> does under the hood.</p>
+
+        <h2>Request logging is separate</h2>
+        <p><code>RequestLogger</code> writes JSONL audit records to its own file. It doesn't know about the cache backend and you don't need a cache to use it.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> RequestLogger
+
+log = <span class="cl">RequestLogger</span>(<span class="st">"requests.log"</span>)
+log.<span class="fn">log</span>(uri=<span class="st">"/v1/items"</span>, status=<span class="num">200</span>)
+
+<span class="kw">for</span> entry <span class="kw">in</span> log.<span class="fn">get_logs_from_last_seconds</span>(<span class="num">60</span>):
+    print(entry.data[<span class="st">"uri"</span>], entry.data[<span class="st">"status"</span>])</code></pre>
+      </div>
+
+      <!-- ══════════════════════════════════════ API WRAPPER -->
+      <div class="section" id="section-api-wrapper">
+        <div class="page-hero">
+          <div class="page-tag">API clients</div>
+          <h1 class="page-title">Build with <em>ApiWrapper</em></h1>
+          <p class="page-lead">The highest-level integration surface. Subclass it and your endpoint methods stay thin — URL building, caching, response decoding, and model hydration are handled for you.</p>
+        </div>
+
+        <h2>Basic subclass pattern</h2>
+        <p>Override <code>get_session()</code> to set headers or auth, then add one method per endpoint.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> typing <span class="kw">import</span> Annotated
+<span class="kw">from</span> pypercache.api_wrapper <span class="kw">import</span> ApiWrapper
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">Widget</span>:
+    id: int
+    display_name: <span class="cl">Annotated</span>[str, <span class="cl">Alias</span>(<span class="st">"displayName"</span>)]
+
+<span class="kw">class</span> <span class="cl">WidgetClient</span>(<span class="cl">ApiWrapper</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self) -> <span class="kw">None</span>:
+        <span class="fn">super()</span>.<span class="fn">__init__</span>(
+            origins={<span class="st">"default"</span>: <span class="st">"https://api.example.com"</span>},
+            default_origin=<span class="st">"default"</span>,
+            cache_path=<span class="st">"widget_cache.json"</span>,
+            default_expiry=<span class="num">300</span>,
+        )
+
+    <span class="kw">def</span> <span class="fn">get_session</span>(self):
+        session = <span class="fn">super()</span>.<span class="fn">get_session</span>()
+        session.headers.<span class="fn">update</span>({<span class="st">"User-Agent"</span>: <span class="st">"widget-client/1.0"</span>})
+        <span class="kw">return</span> session
+
+    <span class="kw">def</span> <span class="fn">list_widgets</span>(self) -> list[<span class="cl">Widget</span>]:
+        <span class="kw">return</span> self.<span class="fn">request</span>(<span class="st">"GET"</span>, <span class="st">"/widgets"</span>, expected=<span class="st">"json"</span>, cast=list[<span class="cl">Widget</span>])
+
+    <span class="kw">def</span> <span class="fn">get_widget</span>(self, widget_id: int) -> <span class="cl">Widget</span>:
+        <span class="kw">return</span> self.<span class="fn">request</span>(<span class="st">"GET"</span>, f<span class="st">"/widgets/{widget_id}"</span>, expected=<span class="st">"json"</span>, cast=<span class="cl">Widget</span>)
+
+    <span class="kw">def</span> <span class="fn">create_widget</span>(self, name: str) -> <span class="cl">Widget</span>:
+        <span class="kw">return</span> self.<span class="fn">request</span>(
+            <span class="st">"POST"</span>, <span class="st">"/widgets"</span>,
+            expected=<span class="st">"json"</span>,
+            json_body={<span class="st">"name"</span>: name},
+            use_cache=<span class="kw">False</span>,
+            cast=<span class="cl">Widget</span>,
+        )</code></pre>
+
+        <h2>Constructor</h2>
+        <pre data-lang="python"><code><span class="fn">super()</span>.<span class="fn">__init__</span>(
+    origins={<span class="st">"api"</span>: <span class="st">"https://api.example.com"</span>},
+    default_origin=<span class="st">"api"</span>,
+    cache_path=<span class="st">"example.db"</span>,      <span class="cm"># None disables caching</span>
+    default_expiry=<span class="num">300</span>,
+    request_log_path=<span class="st">"reqs.log"</span>,  <span class="cm"># None disables logging</span>
+    timeout=<span class="num">10</span>,
+)</code></pre>
+
+        <h2>Multi-origin APIs</h2>
+        <p>When your API spans multiple hosts, add each as an origin and select it per request with <code>origin=</code>.</p>
+
+        <pre data-lang="python"><code><span class="kw">super()</span>.<span class="fn">__init__</span>(
+    origins={
+        <span class="st">"api"</span>: <span class="st">"https://api.example.com"</span>,
+        <span class="st">"auth"</span>: <span class="st">"https://auth.example.com"</span>,
+    },
+    default_origin=<span class="st">"api"</span>,
+)
+
+<span class="cm"># In an endpoint method:</span>
+<span class="kw">return</span> self.<span class="fn">request</span>(<span class="st">"GET"</span>, <span class="st">"/token"</span>, origin=<span class="st">"auth"</span>, ...)</code></pre>
+
+        <h2>Caching rules</h2>
+        <p>The behavior is intentionally simple: only <code>GET</code> requests with <code>expected="auto"</code> or <code>expected="json"</code> are cached. Stale entries are refetched, not served. Pass <code>use_cache=False</code> to skip both lookup and writeback — always do this for <code>POST</code>, <code>PUT</code>, and <code>DELETE</code> requests.</p>
+
+        <h2>Error handling</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.api_wrapper <span class="kw">import</span> ApiHTTPError
+
+<span class="kw">try</span>:
+    client.<span class="fn">get_widget</span>(<span class="num">404</span>)
+<span class="kw">except</span> <span class="cl">ApiHTTPError</span> <span class="kw">as</span> exc:
+    print(exc.status_code)
+    print(exc.url)
+    print(exc.body)</code></pre>
+
+        <h2>Lifecycle</h2>
+        <pre data-lang="python"><code>client = <span class="cl">WidgetClient</span>()
+<span class="kw">try</span>:
+    widgets = client.<span class="fn">list_widgets</span>()
+<span class="kw">finally</span>:
+    client.<span class="fn">close</span>()  <span class="cm"># closes cache + session</span></code></pre>
+      </div>
+
+      <!-- ══════════════════════════════════════ BUILDING BLOCKS -->
+      <div class="section" id="section-building-blocks">
+        <div class="page-hero">
+          <div class="page-tag">API clients</div>
+          <h1 class="page-title">Lower-level <em>pieces</em></h1>
+          <p class="page-lead">Bring your own HTTP transport and compose only the PyperCache parts you need: <code>Cache</code>, <code>RequestLogger</code>, <code>@apimodel</code>, and <code>JsonInjester</code>.</p>
+        </div>
+
+        <div class="callout info"><strong>When to use this path:</strong> You already have an HTTP client abstraction, need custom cache keys or refresh rules, want to cache non-request work, or only need parts of PyperCache — not the full wrapper.</div>
+
+        <h2>Manual fetch-or-cache</h2>
+        <p>This is the core pattern — everything <code>ApiWrapper.request()</code> automates, written explicitly.</p>
+
+        <pre data-lang="python"><code><span class="kw">import</span> requests
+<span class="kw">from</span> pypercache <span class="kw">import</span> Cache, RequestLogger
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">User</span>:
+    id: int
+    name: str
+    email: str
+
+cache = <span class="cl">Cache</span>(filepath=<span class="st">"users_cache.db"</span>)
+log = <span class="cl">RequestLogger</span>(filepath=<span class="st">"users_requests.log"</span>)
+
+key = <span class="st">"user:1"</span>
+<span class="kw">if not</span> cache.<span class="fn">is_data_fresh</span>(key):
+    response = requests.<span class="fn">get</span>(<span class="st">"https://api.example.com/users/1"</span>, timeout=<span class="num">10</span>)
+    response.<span class="fn">raise_for_status</span>()
+    payload = response.<span class="fn">json</span>()
+    log.<span class="fn">log</span>(uri=response.url, status=response.status_code)
+    cache.<span class="fn">store</span>(key, payload, expiry=<span class="num">300</span>, cast=<span class="cl">User</span>)
+
+user = cache.<span class="fn">get_object</span>(key)
+print(user.name)
+cache.<span class="fn">close</span>()</code></pre>
+
+        <h2>Navigating a loaded record</h2>
+        <pre data-lang="python"><code>record = cache.<span class="fn">get</span>(<span class="st">"user:1"</span>)
+print(record.query.<span class="fn">has</span>(<span class="st">"name"</span>))
+print(record.query.<span class="fn">get</span>(<span class="st">"address.city"</span>, default_value=<span class="st">"unknown"</span>))</code></pre>
+
+        <h2>@apimodel vs @Cache.cached</h2>
+        <p>Use <code>@apimodel</code> when you want aliases, timestamps, lazy fields, or column transforms. Use <code>@Cache.cached</code> when you only need lightweight class registration — your class already knows how to accept the cached payload.</p>
+
+        <pre data-lang="python"><code><span class="dc">@Cache.cached</span>
+<span class="kw">class</span> <span class="cl">SearchResult</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, hits=<span class="kw">None</span>, total=<span class="num">0</span>, **kwargs):
+        self.hits = hits <span class="kw">or</span> []
+        self.total = total
+
+cache.<span class="fn">store</span>(<span class="st">"search:python"</span>, {<span class="st">"hits"</span>: [], <span class="st">"total"</span>: <span class="num">0</span>}, cast=<span class="cl">SearchResult</span>)
+result = cache.<span class="fn">get_object</span>(<span class="st">"search:python"</span>)</code></pre>
+
+        <h2>Using RequestLogger standalone</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> RequestLogger
+
+log = <span class="cl">RequestLogger</span>(<span class="st">"requests.log"</span>)
+log.<span class="fn">log</span>(uri=<span class="st">"/health"</span>, status=<span class="num">200</span>)
+
+<span class="kw">for</span> entry <span class="kw">in</span> log.<span class="fn">get_logs_from_last_seconds</span>(<span class="num">60</span>):
+    print(entry.data[<span class="st">"uri"</span>], entry.data[<span class="st">"status"</span>])</code></pre>
+      </div>
+
+      <!-- ══════════════════════════════════════ TYPED MODELS -->
+      <div class="section" id="section-typed-models">
+        <div class="page-hero">
+          <div class="page-tag">API clients</div>
+          <h1 class="page-title">Typed models with <em>@apimodel</em></h1>
+          <p class="page-lead">Decorate a class and it gains a dict-accepting constructor, nested type hydration, <code>from_dict()</code>, <code>as_dict()</code>, field aliases, timestamp parsing, lazy fields, and optional validation.</p>
+        </div>
+
+        <h2>Basic usage</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> apimodel
+
+<span class="dc">@apimodel</span>
+<span class="kw">class</span> <span class="cl">Widget</span>:
+    id: int
+    name: str
+
+widget = <span class="cl">Widget</span>({<span class="st">"id"</span>: <span class="num">1</span>, <span class="st">"name"</span>: <span class="st">"Gear"</span>})
+print(widget.name)
+print(<span class="cl">Widget</span>.<span class="fn">from_dict</span>({<span class="st">"id"</span>: <span class="num">2</span>, <span class="st">"name"</span>: <span class="st">"Bolt"</span>}).id)
+print(widget.<span class="fn">as_dict</span>())</code></pre>
+
+        <h2>Nested hydration</h2>
+        <p>Annotated nested model types are hydrated automatically — no explicit <code>Address(raw_dict)</code> calls needed.</p>
+
+        <pre data-lang="python"><code><span class="dc">@apimodel</span>
+<span class="kw">class</span> <span class="cl">Address</span>:
+    city: str
+
+<span class="dc">@apimodel</span>
+<span class="kw">class</span> <span class="cl">Company</span>:
+    name: str
+    address: <span class="cl">Address</span>
+
+<span class="dc">@apimodel</span>
+<span class="kw">class</span> <span class="cl">User</span>:
+    id: int
+    company: <span class="cl">Company</span>
+    previous: list[<span class="cl">Address</span>]
+
+u = <span class="cl">User</span>({
+    <span class="st">"id"</span>: <span class="num">1</span>,
+    <span class="st">"company"</span>: {<span class="st">"name"</span>: <span class="st">"ACME"</span>, <span class="st">"address"</span>: {<span class="st">"city"</span>: <span class="st">"Redmond"</span>}},
+    <span class="st">"previous"</span>: [{<span class="st">"city"</span>: <span class="st">"Phoenix"</span>}, {<span class="st">"city"</span>: <span class="st">"Tempe"</span>}],
+})
+print(u.company.address.city)  <span class="cm"># "Redmond"</span>
+print(u.previous[<span class="num">0</span>].city)     <span class="cm"># "Phoenix"</span></code></pre>
+
+        <h2>Validation and strictness</h2>
+        <pre data-lang="python"><code><span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">User</span>:
+    id: int
+    name: str</code></pre>
+
+        <p><code>validate=True</code> checks hydrated values against type annotations. Add <code>strict=True</code> to also raise on missing annotated fields (instead of silently storing <code>UNSET</code>).</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.validation <span class="kw">import</span> ApiModelValidationError
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>, strict=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">StrictUser</span>:
+    id: int
+    name: str
+
+<span class="kw">try</span>:
+    <span class="cl">StrictUser</span>({<span class="st">"id"</span>: <span class="num">1</span>})       <span class="cm"># missing "name"</span>
+<span class="kw">except</span> <span class="cl">ApiModelValidationError</span> <span class="kw">as</span> exc:
+    print(exc)</code></pre>
+
+        <h2>Alias — mapping raw keys</h2>
+        <p>Use when the raw payload uses a key you don't want on the Python object.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> typing <span class="kw">import</span> Annotated
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">Post</span>:
+    user_id: <span class="cl">Annotated</span>[int, <span class="cl">Alias</span>(<span class="st">"userId"</span>)]
+    title: str
+    body: str</code></pre>
+
+        <h2>Timestamp — parsing date fields</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Timestamp, apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">AuditRecord</span>:
+    created_at: <span class="cl">Annotated</span>[datetime, <span class="cl">Timestamp</span>()]
+    refreshed_at: <span class="cl">Annotated</span>[datetime, <span class="cl">Alias</span>(<span class="st">"refreshedAt"</span>), <span class="cl">Timestamp</span>(unit=<span class="st">"ms"</span>)]</code></pre>
+
+        <p><code>Timestamp()</code> handles ISO 8601 strings, numeric Unix timestamps, millisecond timestamps (<code>unit="ms"</code>), and explicit format strings.</p>
+
+        <h2>Columns — parallel arrays to rows</h2>
+        <p>Some APIs return data as a dict of parallel arrays. <code>Columns</code> converts that into a list of row model instances.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Columns, apimodel
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">HourRow</span>:
+    time: int
+    temperature_2m: float
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">Forecast</span>:
+    hourly: <span class="cl">Annotated</span>[list[<span class="cl">HourRow</span>], <span class="cl">Columns</span>(required=(<span class="st">"time"</span>, <span class="st">"temperature_2m"</span>))]
+
+forecast = <span class="cl">Forecast</span>({
+    <span class="st">"hourly"</span>: {
+        <span class="st">"time"</span>: [<span class="num">1713000000</span>, <span class="num">1713003600</span>],
+        <span class="st">"temperature_2m"</span>: [<span class="num">21.2</span>, <span class="num">22.5</span>],
+    }
+})
+print(forecast.hourly[<span class="num">0</span>].temperature_2m)  <span class="cm"># 21.2</span></code></pre>
+
+        <h2>Lazy — deferred hydration</h2>
+        <p>Wrap a type in <code>Lazy[T]</code> and it won't be hydrated until first access. Useful for large or expensive nested fields.</p>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.lazy <span class="kw">import</span> Lazy
+
+<span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
+<span class="kw">class</span> <span class="cl">User</span>:
+    id: int
+    profile: <span class="cl">Lazy</span>[<span class="cl">Profile</span>]</code></pre>
+
+        <p><code>Lazy</code> composes with <code>Alias</code>, <code>Timestamp</code>, and <code>Columns</code>.</p>
+      </div>
+
+      <!-- ══════════════════════════════════════ JSON INJESTER -->
+      <div class="section" id="section-json-injester">
+        <div class="page-hero">
+          <div class="page-tag">Query layer</div>
+          <h1 class="page-title">JsonInjester</h1>
+          <p class="page-lead">A small, read-only selector language for navigating nested dicts in memory. No mutations, no backend queries — just structured access over a payload you already have.</p>
+        </div>
+
+        <h2>Standalone usage</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.query <span class="kw">import</span> JsonInjester
+
+data = {
+    <span class="st">"meta"</span>: {<span class="st">"total"</span>: <span class="num">2</span>},
+    <span class="st">"users"</span>: [
+        {<span class="st">"name"</span>: <span class="st">"Ada"</span>, <span class="st">"role"</span>: <span class="st">"admin"</span>},
+        {<span class="st">"name"</span>: <span class="st">"Linus"</span>, <span class="st">"role"</span>: <span class="st">"member"</span>},
+    ],
+}
+
+q = <span class="cl">JsonInjester</span>(data)
+print(q.<span class="fn">get</span>(<span class="st">"meta.total"</span>))
+print(q.<span class="fn">get</span>(<span class="st">"users?role=admin"</span>))
+print(q.<span class="fn">get</span>(<span class="st">"users?name*"</span>))</code></pre>
+
+        <p>Or access it directly from a <code>CacheRecord</code>:</p>
+
+        <pre data-lang="python"><code>q = cache.<span class="fn">get</span>(<span class="st">"order:1"</span>).query
+print(q.<span class="fn">get</span>(<span class="st">"customer.name"</span>))</code></pre>
+
+        <h2>Constructor options</h2>
+        <p><strong><code>root</code></strong> — move the starting cursor to a subtree:</p>
+
+        <pre data-lang="python"><code>q = <span class="cl">JsonInjester</span>({<span class="st">"meta"</span>: {<span class="st">"total"</span>: <span class="num">5</span>}}, root=<span class="st">"meta"</span>)
+print(q.<span class="fn">get</span>(<span class="st">"total"</span>))  <span class="cm"># 5</span></code></pre>
+
+        <p><strong><code>default_tail</code></strong> — when a selector resolves to a dict, automatically follow one more selector before returning:</p>
+
+        <pre data-lang="python"><code>q = <span class="cl">JsonInjester</span>({<span class="st">"wrapper"</span>: {<span class="st">"value"</span>: <span class="num">5</span>}}, default_tail=<span class="st">"value"</span>)
+print(q.<span class="fn">get</span>(<span class="st">"wrapper"</span>))  <span class="cm"># 5</span></code></pre>
+
+        <h2>When selectors resolve to nothing</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.query.json_injester <span class="kw">import</span> UNSET
+
+value = q.<span class="fn">get</span>(<span class="st">"missing.path"</span>)
+print(value <span class="kw">is</span> <span class="cl">UNSET</span>)                              <span class="cm"># True</span>
+print(q.<span class="fn">get</span>(<span class="st">"missing.path"</span>, default_value=<span class="num">0</span>))  <span class="cm"># 0</span></code></pre>
+
+        <p>Use <code>has()</code> when you just want a boolean — it's clearer than checking against <code>None</code>:</p>
+
+        <pre data-lang="python"><code>has_discount = q.<span class="fn">has</span>(<span class="st">"discount"</span>)
+discount = q.<span class="fn">get</span>(<span class="st">"discount"</span>, default_value=<span class="num">0</span>)</code></pre>
+
+        <h2>Good fit / bad fit</h2>
+        <div class="cards">
+          <div class="card" style="cursor:default">
+            <div class="card-title" style="color: var(--accent);">✓ Good fit</div>
+            <div class="card-desc">Loaded dicts and lists · API response inspection · Light in-memory filtering · Plucking fields from large payloads</div>
+          </div>
+          <div class="card" style="cursor:default">
+            <div class="card-title" style="color: var(--red);">✗ Bad fit</div>
+            <div class="card-desc">Cross-record searches · Relational queries · Mutating data · Backend-wide scans</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════ SELECTOR GUIDE -->
+      <div class="section" id="section-selector-guide">
+        <div class="page-hero">
+          <div class="page-tag">Query layer</div>
+          <h1 class="page-title">Selector <em>syntax</em></h1>
+          <p class="page-lead">All selectors are passed as strings to <code>q.get()</code>. They compose left to right — each token narrows or transforms the current cursor before passing it to the next.</p>
+        </div>
+
+        <h2>Reference</h2>
+
+        <div class="selector-row">
+          <div class="selector-syntax">key.key.key</div>
+          <div class="selector-desc">Dot-separated path navigation. Returns <code>UNSET</code> if any key is missing.</div>
+        </div>
+        <div class="selector-row">
+          <div class="selector-syntax">"content-type"</div>
+          <div class="selector-desc">Quoted key — use double quotes when the key contains non-identifier characters like hyphens.</div>
+        </div>
+        <div class="selector-row">
+          <div class="selector-syntax">list?key=value</div>
+          <div class="selector-desc">Filter a list of dicts to elements where <code>key</code> equals <code>value</code>. Returns an empty list if nothing matches. Supports nested paths: <code>users?team.name=Platform</code>.</div>
+        </div>
+        <div class="selector-row">
+          <div class="selector-syntax">list?key=#42</div>
+          <div class="selector-desc">Numeric filter — prefix the value with <code>#</code> to compare as a number rather than a string.</div>
+        </div>
+        <div class="selector-row">
+          <div class="selector-syntax">list?key=value.field</div>
+          <div class="selector-desc">Filter then pluck: the tail path after <code>?key=value</code> is extracted from each matching element.</div>
+        </div>
+        <div class="selector-row">
+          <div class="selector-syntax">list?field*</div>
+          <div class="selector-desc">Pluck — extract a field from every element in the list. Supports nested paths: <code>users?team.name*</code>. Chains: <code>users?role*?label*</code>.</div>
+        </div>
+        <div class="selector-row">
+          <div class="selector-syntax">key?field</div>
+          <div class="selector-desc">Exists filter. On a dict: returns the dict if the key exists, <code>UNSET</code> otherwise. On a list: returns only elements that contain the key.</div>
+        </div>
+
+        <h2>get() options</h2>
+        <table>
+          <thead>
+            <tr><th>Option</th><th>Behavior</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>default_value</td>
+              <td>Return this when the path is missing or resolves to <code>None</code>. Without it, the result is <code>UNSET</code>.</td>
+            </tr>
+            <tr>
+              <td>select_first=True</td>
+              <td>Unwrap the first element from a list result. Returns <code>UNSET</code> if the list is empty.</td>
+            </tr>
+            <tr>
+              <td>cast=Type</td>
+              <td>Hydrate a dict result into a type or <code>@apimodel</code> class.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Full example</h2>
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.query <span class="kw">import</span> JsonInjester
+<span class="kw">from</span> pypercache.query.json_injester <span class="kw">import</span> UNSET
+
+data = {
+    <span class="st">"meta"</span>: {<span class="st">"total"</span>: <span class="num">3</span>},
+    <span class="st">"hits"</span>: [
+        {<span class="st">"name"</span>: <span class="st">"Alice"</span>, <span class="st">"role"</span>: <span class="st">"staff"</span>, <span class="st">"score"</span>: <span class="num">92</span>},
+        {<span class="st">"name"</span>: <span class="st">"Bob"</span>, <span class="st">"role"</span>: <span class="st">"guest"</span>, <span class="st">"score"</span>: <span class="num">74</span>},
+        {<span class="st">"name"</span>: <span class="st">"Carol"</span>, <span class="st">"role"</span>: <span class="st">"staff"</span>, <span class="st">"score"</span>: <span class="num">88</span>},
+    ],
+}
+
+q = <span class="cl">JsonInjester</span>(data)
+
+print(q.<span class="fn">get</span>(<span class="st">"meta.total"</span>))                               <span class="cm"># 3</span>
+print(q.<span class="fn">get</span>(<span class="st">"hits?role=staff.name"</span>))                      <span class="cm"># ["Alice", "Carol"]</span>
+print(q.<span class="fn">get</span>(<span class="st">"hits?name*"</span>))                                <span class="cm"># ["Alice", "Bob", "Carol"]</span>
+print(q.<span class="fn">get</span>(<span class="st">"hits?role=staff"</span>, select_first=<span class="kw">True</span>))        <span class="cm"># Alice's dict</span>
+print(q.<span class="fn">get</span>(<span class="st">"hits?role=contractor"</span>, select_first=<span class="kw">True</span>) <span class="kw">is</span> <span class="cl">UNSET</span>)  <span class="cm"># True</span></code></pre>
+
+        <h2>Limits</h2>
+        <ul>
+          <li>Read-only — <code>JsonInjester</code> never mutates the payload.</li>
+          <li>Integer indexing like <code>"users.0.name"</code> is not supported. Use <code>select_first=True</code> instead.</li>
+          <li>A bare path on a list root is not supported. Use <code>?key*</code> or <code>?key=value</code>.</li>
+          <li>Works on one in-memory payload at a time — no cross-record queries.</li>
+        </ul>
+      </div>
+
+      <!-- ══════════════════════════════════════ REF: CACHE -->
+      <div class="section" id="section-ref-cache">
+        <div class="page-hero">
+          <div class="page-tag">Reference</div>
+          <h1 class="page-title">Cache <em>API</em></h1>
+          <p class="page-lead">Exact signatures and behavior for <code>Cache</code> and <code>CacheRecord</code>.</p>
+        </div>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> Cache, CacheRecord</code></pre>
+
+        <h2>Cache</h2>
+
+        <h3>Constructor</h3>
+        <div class="method"><span class="cl">Cache</span>(<span class="mparam">filepath: str | None = None</span>)</div>
+        <p>Default path: <code>api-cache.pkl</code>. Backend selected from the file extension.</p>
+
+        <h3>Methods</h3>
+
+        <h4>store</h4>
+        <div class="method">cache.<span class="mname">store</span>(<span class="mparam">key, data, expiry=math.inf, cast=None</span>)</div>
+        <p>Creates or overwrites a record. Pass <code>cast=MyModel</code> to store hydration metadata alongside the payload.</p>
+
+        <h4>get</h4>
+        <div class="method">cache.<span class="mname">get</span>(<span class="mparam">key</span>) → <span class="mtype">CacheRecord</span></div>
+        <p>Returns the record. Raises <code>KeyError</code> if missing.</p>
+
+        <h4>get_object</h4>
+        <div class="method">cache.<span class="mname">get_object</span>(<span class="mparam">key, default_value=UNSET</span>) → <span class="mtype">object</span></div>
+        <p>Hydrates the payload using the stored cast type. Raises <code>KeyError</code> if missing (and no default given), or <code>AttributeError</code> if no cast metadata was stored.</p>
+
+        <h4>has</h4>
+        <div class="method">cache.<span class="mname">has</span>(<span class="mparam">key</span>) → <span class="mtype">bool</span></div>
+        <p>Checks existence only. Doesn't care whether the record is stale.</p>
+
+        <h4>is_data_fresh</h4>
+        <div class="method">cache.<span class="mname">is_data_fresh</span>(<span class="mparam">key</span>) → <span class="mtype">bool</span></div>
+        <p>Returns <code>True</code> only when the key exists and the TTL has not elapsed. Never raises.</p>
+
+        <h4>update</h4>
+        <div class="method">cache.<span class="mname">update</span>(<span class="mparam">key, data</span>)</div>
+        <p>Replaces the payload, refreshes the timestamp, preserves expiry and cast metadata. Raises <code>KeyError</code> if the key doesn't exist.</p>
+
+        <h4>completely_erase_cache</h4>
+        <div class="method">cache.<span class="mname">completely_erase_cache</span>()</div>
+        <p>Deletes all records from the backend.</p>
+
+        <h4>close</h4>
+        <div class="method">cache.<span class="mname">close</span>()</div>
+        <p>Closes the storage backend. Required for SQLite to flush pending writes; no-op for other backends.</p>
+
+        <h4>Cache.cached</h4>
+        <div class="method"><span class="dc">@Cache.cached</span></div>
+        <p>Class decorator for lightweight registration. The decorated class can then be passed as <code>cast=</code>.</p>
+
+        <hr>
+
+        <h2>CacheRecord</h2>
+        <p>Returned by <code>cache.get(key)</code>.</p>
+
+        <h3>Attributes</h3>
+        <table>
+          <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>data</td><td>any</td><td>The stored payload.</td></tr>
+            <tr><td>timestamp</td><td>float</td><td>Unix timestamp of the last write.</td></tr>
+            <tr><td>expiry</td><td>float</td><td>TTL in seconds (<code>math.inf</code> if none set).</td></tr>
+            <tr><td>cast_str</td><td>str | None</td><td>Stored cast metadata string.</td></tr>
+            <tr><td>cast</td><td>type | None</td><td>Lazily resolved Python type.</td></tr>
+            <tr><td>is_data_stale</td><td>bool</td><td><code>True</code> when the record has expired.</td></tr>
+            <tr><td>query</td><td>JsonInjester</td><td>A <code>JsonInjester</code> instance over <code>data</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Methods</h3>
+        <h4>update</h4>
+        <div class="method">record.<span class="mname">update</span>(<span class="mparam">data</span>)</div>
+        <p>Replaces the payload, refreshes the timestamp, and invalidates the cached query wrapper.</p>
+
+        <h4>as_dict</h4>
+        <div class="method">record.<span class="mname">as_dict</span>() → <span class="mtype">dict</span></div>
+        <p>Returns a serializable dict representation of the record.</p>
+      </div>
+
+      <!-- ══════════════════════════════════════ REF: APIWRAPPER -->
+      <div class="section" id="section-ref-apiwrapper">
+        <div class="page-hero">
+          <div class="page-tag">Reference</div>
+          <h1 class="page-title">ApiWrapper <em>API</em></h1>
+          <p class="page-lead">Exact signatures for <code>ApiWrapper</code>, <code>ApiHTTPError</code>, and <code>SSEEvent</code>.</p>
+        </div>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.api_wrapper <span class="kw">import</span> ApiHTTPError, ApiWrapper, ApiWrapperError, SSEEvent</code></pre>
+
+        <h2>Constructor</h2>
+        <div class="method">
+          <span class="cl">ApiWrapper</span>(<br>
+          &nbsp;&nbsp;<span class="mparam">*, origins: Mapping[str, str],</span><br>
+          &nbsp;&nbsp;<span class="mparam">default_origin: str,</span><br>
+          &nbsp;&nbsp;<span class="mparam">cache_path: str | None = None,</span><br>
+          &nbsp;&nbsp;<span class="mparam">default_expiry: int | float = math.inf,</span><br>
+          &nbsp;&nbsp;<span class="mparam">enable_cache: bool = True,</span><br>
+          &nbsp;&nbsp;<span class="mparam">request_log_path: str | None = None,</span><br>
+          &nbsp;&nbsp;<span class="mparam">timeout: int | float | None = 10,</span><br>
+          &nbsp;&nbsp;<span class="mparam">session: requests.Session | None = None,</span><br>
+          )
+        </div>
+
+        <h2>Methods</h2>
+
+        <h3>get_session</h3>
+        <div class="method">client.<span class="mname">get_session</span>() → <span class="mtype">requests.Session</span></div>
+        <p>Override to centralize headers, auth, retries, or adapters.</p>
+
+        <h3>request</h3>
+        <div class="method">
+          client.<span class="mname">request</span>(<br>
+          &nbsp;&nbsp;<span class="mparam">method, path,</span><br>
+          &nbsp;&nbsp;<span class="mparam">*, params=None, json_body=None, data=None, files=None,</span><br>
+          &nbsp;&nbsp;<span class="mparam">expected="auto", use_cache=None, timeout=None,</span><br>
+          &nbsp;&nbsp;<span class="mparam">headers=None, expiry=None, cast=None, origin=None,</span><br>
+          )
+        </div>
+        <ul>
+          <li><code>expected</code>: <code>"auto"</code>, <code>"json"</code>, <code>"text"</code>, or <code>"bytes"</code></li>
+          <li>Only <code>GET</code> requests with <code>expected="auto"</code> or <code>"json"</code> are cached</li>
+          <li>Raises <code>ApiHTTPError</code> on HTTP 4xx/5xx</li>
+        </ul>
+
+        <h3>download_to</h3>
+        <div class="method">client.<span class="mname">download_to</span>(<span class="mparam">path, destination, *, params=None, use_cache=False, timeout=None, headers=None, origin=None</span>)</div>
+        <p>Downloads a bytes response and writes it to <code>destination</code>.</p>
+
+        <h3>stream_sse</h3>
+        <div class="method">client.<span class="mname">stream_sse</span>(<span class="mparam">path, *, params=None, data=None, timeout=None, headers=None, method="GET", origin=None</span>) → <span class="mtype">Iterator[SSEEvent]</span></div>
+        <p>Parses a Server-Sent Events stream into <code>SSEEvent</code> objects. Does not reconnect automatically.</p>
+
+        <h3>close</h3>
+        <div class="method">client.<span class="mname">close</span>()</div>
+        <p>Closes the cache and, if the wrapper created the session, the session too.</p>
+
+        <hr>
+
+        <h2>ApiHTTPError</h2>
+        <p>Raised on HTTP 4xx and 5xx responses.</p>
+        <table>
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>status_code</td><td>HTTP status code as an integer.</td></tr>
+            <tr><td>url</td><td>The request URL.</td></tr>
+            <tr><td>body</td><td>The response body.</td></tr>
+          </tbody>
+        </table>
+
+        <h2>SSEEvent</h2>
+        <p>Frozen dataclass with fields: <code>event</code>, <code>data</code>, <code>id</code>, <code>retry</code>.</p>
+      </div>
+
+      <!-- ══════════════════════════════════════ REF: APIMODEL -->
+      <div class="section" id="section-ref-apimodel">
+        <div class="page-hero">
+          <div class="page-tag">Reference</div>
+          <h1 class="page-title">@apimodel <em>API</em></h1>
+          <p class="page-lead">Exact signatures for the decorator and all field helpers.</p>
+        </div>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Columns, Timestamp, apimodel
+<span class="kw">from</span> pypercache.models.lazy <span class="kw">import</span> Lazy
+<span class="kw">from</span> pypercache.models.validation <span class="kw">import</span> ApiModelValidationError</code></pre>
+
+        <h2>Decorator</h2>
+        <div class="method"><span class="dc">@apimodel</span>(<span class="mparam">cls=None, *, validate: bool = False, strict: bool = False</span>)</div>
+        <p>Can be used bare (<code>@apimodel</code>) or with keyword arguments (<code>@apimodel(validate=True)</code>).</p>
+
+        <h2>What the decorator adds</h2>
+        <ul>
+          <li>Registers the class in the shared class repository</li>
+          <li>Injects a constructor that accepts one raw <code>dict</code></li>
+          <li>Adds <code>from_dict(cls, data)</code> classmethod</li>
+          <li>Adds <code>as_dict(self)</code> instance method</li>
+          <li>Handles eager and lazy field hydration from annotations</li>
+        </ul>
+
+        <h2>Field helpers</h2>
+
+        <h3>Alias</h3>
+        <div class="method"><span class="cl">Alias</span>(<span class="mparam">key: str</span>)</div>
+        <p>Read the field from a different raw key name.</p>
+
+        <h3>Timestamp</h3>
+        <div class="method"><span class="cl">Timestamp</span>(<span class="mparam">fmt=None, *, unit="seconds", tz=timezone.utc</span>)</div>
+        <p>Parses raw timestamp values into <code>datetime</code>. Handles ISO 8601 strings, numeric Unix timestamps, millisecond timestamps (<code>unit="ms"</code>), and explicit format strings.</p>
+
+        <h3>Columns</h3>
+        <div class="method"><span class="cl">Columns</span>(<span class="mparam">required=()</span>)</div>
+        <p>Converts a dict-of-parallel-arrays payload into <code>list[RowModel]</code>.</p>
+
+        <h3>Lazy</h3>
+        <div class="method"><span class="cl">Lazy</span>[T]</div>
+        <p>Defers hydration of a field until first access. Composes with <code>Alias</code>, <code>Timestamp</code>, and <code>Columns</code>.</p>
+
+        <h2>Validation</h2>
+        <ul>
+          <li><code>validate=True</code> — checks values against type annotations; raises <code>ApiModelValidationError</code> on mismatch</li>
+          <li><code>strict=True</code> — raises <code>ApiModelValidationError</code> when an annotated field is missing instead of storing <code>UNSET</code></li>
+        </ul>
+
+        <h2>Notes</h2>
+        <ul>
+          <li><code>as_dict()</code> returns the underlying raw dict representation</li>
+          <li>Assigning to a decorated field writes the converted value back into that raw dict</li>
+          <li>Define models at module scope so they can be resolved reliably by the class repository</li>
+        </ul>
+      </div>
+
+      <!-- ══════════════════════════════════════ REF: STORAGE -->
+      <div class="section" id="section-ref-storage">
+        <div class="page-hero">
+          <div class="page-tag">Reference</div>
+          <h1 class="page-title">Storage &amp; logging <em>API</em></h1>
+          <p class="page-lead">Exact signatures for storage backends, <code>StorageMechanism</code>, and <code>RequestLogger</code>.</p>
+        </div>
+
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> RequestLogger
+<span class="kw">from</span> pypercache.storage <span class="kw">import</span> (
+    ChunkedDictionary, ChunkedStorage, JSONStorage,
+    PickleStorage, SQLiteStorage, StorageMechanism,
+    get_storage_mechanism,
+)</code></pre>
+
+        <h2>Backend selection</h2>
+        <div class="method"><span class="fn">get_storage_mechanism</span>(<span class="mparam">"cache.db"</span>)</div>
+        <p>Returns the backend class for the given file extension.</p>
+
+        <table>
+          <thead><tr><th>Extension</th><th>Class</th></tr></thead>
+          <tbody>
+            <tr><td>.pkl</td><td>PickleStorage</td></tr>
+            <tr><td>.json</td><td>JSONStorage</td></tr>
+            <tr><td>.manifest</td><td>ChunkedStorage</td></tr>
+            <tr><td>.db</td><td>SQLiteStorage</td></tr>
+          </tbody>
+        </table>
+
+        <h2>StorageMechanism</h2>
+        <p>Abstract base class for custom backends. Implement these private methods:</p>
+        <ul>
+          <li><code>_impl__touch_store(filepath)</code></li>
+          <li><code>_impl__load(filepath)</code></li>
+          <li><code>_impl__save(cache_records_dict, filepath)</code></li>
+          <li><code>_impl__update_record(key, data)</code></li>
+          <li><code>_impl__erase_everything()</code></li>
+        </ul>
+
+        <h2>SQLiteStorage</h2>
+        <div class="method">
+          <span class="cl">SQLiteStorage</span>(<br>
+          &nbsp;&nbsp;<span class="mparam">filepath,</span><br>
+          &nbsp;&nbsp;<span class="mparam">flush_interval=5.0,</span><br>
+          &nbsp;&nbsp;<span class="mparam">dirty_threshold=50,</span><br>
+          )
+        </div>
+        <p>Loads all rows into memory on open. Tracks dirty keys and flushes in batches. Uses WAL mode. Supports <code>flush()</code>, <code>close()</code>, and context manager usage.</p>
+
+        <hr>
+
+        <h2>RequestLogger</h2>
+        <div class="method"><span class="cl">RequestLogger</span>(<span class="mparam">filepath: str | None = None</span>)</div>
+        <p>Default path: <code>api_logfile.log</code>. Writes JSONL records.</p>
+
+        <h3>log</h3>
+        <div class="method">logger.<span class="mname">log</span>(<span class="mparam">uri, status</span>)</div>
+        <p>Appends one JSON object line to the log file.</p>
+
+        <h3>get_logs_from_last_seconds</h3>
+        <div class="method">logger.<span class="mname">get_logs_from_last_seconds</span>(<span class="mparam">seconds=60</span>) → <span class="mtype">list[LogRecord]</span></div>
+        <p>Returns matching records sorted oldest-first.</p>
+
+        <h3>as_list</h3>
+        <div class="method">logger.<span class="mname">as_list</span>() → <span class="mtype">list[dict]</span></div>
+        <p>Returns raw record dicts.</p>
+
+        <h2>LogRecord</h2>
+        <table>
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>timestamp</td><td>Unix timestamp of the log entry.</td></tr>
+            <tr><td>data</td><td>Dict with shape <code>{"uri": "...", "status": 200}</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /content-outer -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<div class="search-modal" id="search-modal" aria-hidden="true">
+  <div class="search-panel" role="dialog" aria-modal="true" aria-labelledby="search-input-label">
+    <div class="search-head">
+      <div class="search-input-wrap">
+        <span aria-hidden="true">⌕</span>
+        <label id="search-input-label" class="search-trigger-label" for="search-input" style="display:none;">Search docs</label>
+        <input
+          id="search-input"
+          class="search-input"
+          type="search"
+          placeholder="Search docs, examples, typed hydration, selectors..."
+          autocomplete="off"
+          spellcheck="false"
+        >
+        </div>
+      <button class="search-close" type="button" onclick="closeSearchModal()">Esc</button>
+    </div>
+    <div class="search-toolbar">
+      <div id="search-status">Indexing local docs…</div>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+<script>
+  const sections = {
+    overview:         { label: 'introduction',    crumb: 'overview' },
+    'tutorial-jsonplaceholder': { label: 'JSONPlaceholder walkthrough', crumb: 'tutorials' },
+    'cache-basics':   { label: 'store & retrieve', crumb: 'cache-users' },
+    'storage-backends': { label: 'storage backends', crumb: 'cache-users' },
+    'api-wrapper':    { label: 'ApiWrapper',       crumb: 'api-clients' },
+    'building-blocks':{ label: 'building blocks',  crumb: 'api-clients' },
+    'typed-models':   { label: 'typed models',     crumb: 'api-clients' },
+    'json-injester':  { label: 'JsonInjester',     crumb: 'query-layer' },
+    'selector-guide': { label: 'selectors',        crumb: 'query-layer' },
+    'ref-cache':      { label: 'Cache',            crumb: 'reference' },
+    'ref-apiwrapper': { label: 'ApiWrapper',       crumb: 'reference' },
+    'ref-apimodel':   { label: '@apimodel',        crumb: 'reference' },
+    'ref-storage':    { label: 'storage & logging',crumb: 'reference' },
+  };
+
+  const codeReferenceTargets = {
+    cache:            { sectionId: 'ref-cache', targetSelector: '#ref-cache-cache' },
+    cacherecord:      { sectionId: 'ref-cache', targetSelector: '#ref-cache-cacherecord' },
+    '@cache.cached':  { sectionId: 'ref-cache', targetSelector: 'h4' },
+    apiwrapper:       { sectionId: 'ref-apiwrapper', targetSelector: '#ref-apiwrapper-constructor' },
+    apihttperror:     { sectionId: 'ref-apiwrapper', targetSelector: '#ref-apiwrapper-apihttperror' },
+    apiwrappererror:  { sectionId: 'ref-apiwrapper', targetSelector: '.page-title' },
+    sseevent:         { sectionId: 'ref-apiwrapper', targetSelector: '#ref-apiwrapper-stream-sse' },
+    '@apimodel':      { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-decorator' },
+    alias:            { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-alias' },
+    'alias()':        { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-alias' },
+    'alias(...)':     { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-alias' },
+    columns:          { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-columns' },
+    'columns()':      { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-columns' },
+    'columns(...)':   { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-columns' },
+    timestamp:        { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-timestamp' },
+    'timestamp()':    { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-timestamp' },
+    'timestamp(...)': { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-timestamp' },
+    lazy:             { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-lazy' },
+    'lazy()':         { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-lazy' },
+    'lazy(...)':      { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-lazy' },
+    apimodelvalidationerror: { sectionId: 'ref-apimodel', targetSelector: '#ref-apimodel-validation' },
+    jsoninjester:     { sectionId: 'json-injester', targetSelector: '.page-title' },
+    'q.get()':        { sectionId: 'selector-guide', targetSelector: '#selector-guide-get-options' },
+    '.query':         { sectionId: 'cache-basics', targetSelector: '#cache-basics-querying-the-payload-inline' },
+    unset:            { sectionId: 'json-injester', targetSelector: '#json-injester-when-selectors-resolve-to-nothing' },
+    storagemechanism: { sectionId: 'ref-storage', targetSelector: '#ref-storage-storagemechanism' },
+    picklestorage:    { sectionId: 'ref-storage', targetSelector: '#ref-storage-backend-selection' },
+    jsonstorage:      { sectionId: 'ref-storage', targetSelector: '#ref-storage-backend-selection' },
+    chunkedstorage:   { sectionId: 'ref-storage', targetSelector: '#ref-storage-backend-selection' },
+    sqlitestorage:    { sectionId: 'ref-storage', targetSelector: '#ref-storage-sqlitestorage' },
+    requestlogger:    { sectionId: 'ref-storage', targetSelector: '#ref-storage-requestlogger' },
+    get_storage_mechanism: { sectionId: 'ref-storage', targetSelector: '#ref-storage-backend-selection' },
+  };
+
+  const semanticAliases = {
+    hydration: ['hydrate', 'hydrated', 'hydrating', 'typed', 'model', 'models', 'cast', 'apimodel', 'get_object'],
+    hydrate: ['hydration', 'hydrated', 'typed', 'cast', 'apimodel'],
+    typed: ['hydration', 'hydrate', 'apimodel', 'model', 'models', 'cast'],
+    model: ['models', 'typed', 'hydration', 'apimodel', 'cast'],
+    models: ['model', 'typed', 'hydration', 'apimodel', 'cast'],
+    apimodel: ['typed', 'hydration', 'model', 'models', 'cast', 'alias', 'timestamp', 'lazy'],
+    cast: ['typed', 'hydration', 'apimodel', 'model'],
+    ttl: ['expiry', 'freshness', 'stale', 'cache'],
+    expiry: ['ttl', 'stale', 'freshness'],
+    stale: ['ttl', 'expiry', 'freshness'],
+    selectors: ['selector', 'query', 'jsoninjester', 'path'],
+    selector: ['selectors', 'query', 'jsoninjester', 'path'],
+    query: ['selector', 'selectors', 'jsoninjester', 'path'],
+    jsoninjester: ['query', 'selector', 'selectors', 'path'],
+    tutorial: ['jsonplaceholder', 'example', 'walkthrough', 'apiwrapper'],
+    tutorials: ['tutorial', 'jsonplaceholder', 'example', 'walkthrough'],
+    jsonplaceholder: ['tutorial', 'example', 'apiwrapper', 'alias', 'cast'],
+    example: ['tutorial', 'jsonplaceholder', 'walkthrough'],
+  };
+
+  const searchState = {
+    chunks: [],
+    activeIndex: -1,
+    results: [],
+    
+    lastRequestId: null,
+    query: '',
+  };
+  const copyIconSvg = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+      <path d="M5 15V7a2 2 0 0 1 2-2h8"></path>
+    </svg>
+  `;
+  const copiedIconSvg = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5"></path>
+    </svg>
+  `;
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-9999px';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
+  }
+
+  function initializeCopyCodeButtons() {
+    document.querySelectorAll('pre[data-lang]').forEach(pre => {
+      if (pre.querySelector('.copy-code-button')) return;
+
+      const code = pre.querySelector('code');
+      if (!code) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'copy-code-button';
+      button.title = 'Copy code';
+      button.setAttribute('aria-label', 'Copy code');
+      button.innerHTML = copyIconSvg + '<span class="copy-code-button-label">copy</span>';
+
+      button.addEventListener('click', async event => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        try {
+          await copyTextToClipboard(code.textContent.replace(/\n$/, ''));
+          button.classList.add('copied');
+          button.title = 'Copied';
+          button.setAttribute('aria-label', 'Copied');
+          button.innerHTML = copiedIconSvg + '<span class="copy-code-button-label">copied!</span>';
+
+          window.setTimeout(() => {
+            button.classList.remove('copied');
+            button.title = 'Copy code';
+            button.setAttribute('aria-label', 'Copy code');
+            button.innerHTML = copyIconSvg + '<span class="copy-code-button-label">copy</span>';
+          }, 1400);
+        } catch (error) {
+          console.error('Copy failed', error);
+          button.title = 'Copy failed';
+          button.setAttribute('aria-label', 'Copy failed');
+        }
+      });
+
+      pre.appendChild(button);
+    });
+  }
+
+  const DEFAULT_SECTION_ID = 'overview';
+  const SEARCH_STORAGE_KEY = 'pypercache-docs-ragexp-search-v1';
+  const SEARCH_STORAGE_RESULT_LIMIT = 6;
+  let activeSearchTarget = null;
+  let activeSearchTargetTimer = null;
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
+  function slugify(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 64);
+  }
+
+  function normalize(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_@.\- ]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function tokenize(text) {
+    return normalize(text)
+      .split(' ')
+      .map(token => token.trim())
+      .filter(token => token.length > 1);
+  }
+
+  function unique(items) {
+    return Array.from(new Set(items));
+  }
+
+  function getStorage() {
+    try {
+      return window.localStorage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function trimStoredQuery(query) {
+    return typeof query === 'string' ? query.slice(0, 240) : '';
+  }
+
+  function persistSearchSnapshot() {
+    const storage = getStorage();
+    if (!storage) return;
+    const query = trimStoredQuery(searchState.query);
+    const snapshot = {
+      query,
+      activeIndex: Math.max(searchState.activeIndex, -1),
+      resultIds: searchState.results
+        .slice(0, SEARCH_STORAGE_RESULT_LIMIT)
+        .map(result => result.id)
+        .filter(Boolean),
+    };
+
+    if (!snapshot.query && !snapshot.resultIds.length) {
+      storage.removeItem(SEARCH_STORAGE_KEY);
+      return;
+    }
+
+    try {
+      storage.setItem(SEARCH_STORAGE_KEY, JSON.stringify(snapshot));
+    } catch (error) {
+      storage.removeItem(SEARCH_STORAGE_KEY);
+    }
+  }
+
+  function restoreSearchSnapshot() {
+    const storage = getStorage();
+    if (!storage) return;
+
+    let snapshot = null;
+    try {
+      snapshot = JSON.parse(storage.getItem(SEARCH_STORAGE_KEY) || 'null');
+    } catch (error) {
+      storage.removeItem(SEARCH_STORAGE_KEY);
+      return;
+    }
+
+    if (!snapshot || typeof snapshot !== 'object') return;
+    searchState.query = trimStoredQuery(snapshot.query);
+
+    const chunkById = new Map(searchState.chunks.map(chunk => [chunk.id, chunk]));
+    const resultIds = Array.isArray(snapshot.resultIds) ? snapshot.resultIds : [];
+    searchState.results = resultIds
+      .map(id => chunkById.get(id))
+      .filter(Boolean)
+      .map((chunk, index) => ({
+        ...chunk,
+        score: SEARCH_STORAGE_RESULT_LIMIT - index,
+        matchedTerms: [],
+        
+      }));
+
+    searchState.activeIndex = searchState.results.length
+      ? Math.min(Math.max(snapshot.activeIndex || 0, 0), searchState.results.length - 1)
+      : -1;
+  }
+
+  function buildTrigrams(value) {
+    const text = `  ${normalize(value)}  `;
+    const grams = new Set();
+    for (let i = 0; i < text.length - 2; i += 1) {
+      grams.add(text.slice(i, i + 3));
+    }
+    return grams;
+  }
+
+  function jaccard(setA, setB) {
+    if (!setA.size || !setB.size) return 0;
+    let intersection = 0;
+    setA.forEach(item => {
+      if (setB.has(item)) intersection += 1;
+    });
+    return intersection / (setA.size + setB.size - intersection);
+  }
+
+  function escapeHtml(text) {
+    return (text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function expandQueryTokens(query) {
+    const tokens = tokenize(query);
+    const expanded = [...tokens];
+    tokens.forEach(token => {
+      const aliases = semanticAliases[token];
+      if (aliases) expanded.push(...aliases);
+      if (token.endsWith('s')) expanded.push(token.slice(0, -1));
+      else expanded.push(`${token}s`);
+    });
+    return unique(expanded.filter(token => token.length > 1));
+  }
+
+  function buildSearchIndex() {
+    const chunks = [];
+    document.querySelectorAll('.section').forEach(section => {
+      const sectionId = section.id.replace('section-', '');
+      const heroTitle = section.querySelector('.page-title')?.textContent?.trim() || sections[sectionId]?.label || sectionId;
+      let currentHeading = heroTitle;
+      let currentAnchor = sectionId;
+      let chunkCounter = 0;
+
+      const heroLead = section.querySelector('.page-lead')?.textContent?.trim();
+      if (heroLead) {
+        const heroChunkId = `${sectionId}-hero`;
+        chunks.push(makeChunk({
+          id: heroChunkId,
+          sectionId,
+          sectionTitle: heroTitle,
+          heading: 'Overview',
+          anchorId: ensureAnchor(section.querySelector('.page-hero'), heroChunkId),
+          targetId: ensureAnchor(section.querySelector('.page-lead') || section.querySelector('.page-hero'), `${heroChunkId}-target`),
+          text: heroLead,
+          sourceType: 'hero',
+          ordinal: chunkCounter++,
+        }));
+      }
+
+      section.querySelectorAll('h2, h3, p, li, pre, .callout, .method, td, .card').forEach(node => {
+        if (node.matches('h2, h3')) {
+          currentHeading = node.textContent.trim();
+          currentAnchor = ensureAnchor(node, `${sectionId}-${slugify(currentHeading) || chunkCounter}`);
+          return;
+        }
+
+        const text = node.innerText ? node.innerText.trim() : node.textContent.trim();
+        if (!text || text.length < 20) return;
+
+        chunks.push(makeChunk({
+          id: `${sectionId}-${chunkCounter}`,
+          sectionId,
+          sectionTitle: heroTitle,
+          heading: currentHeading,
+          anchorId: currentAnchor,
+          targetId: ensureAnchor(node, `${sectionId}-${chunkCounter}-target`),
+          text,
+          sourceType: node.tagName.toLowerCase(),
+          ordinal: chunkCounter++,
+        }));
+      });
+    });
+
+    searchState.chunks = chunks;
+    document.getElementById('search-status').textContent = `Indexed ${chunks.length} local chunks`;
+  }
+
+  function ensureAnchor(node, fallbackId) {
+    if (!node) return fallbackId;
+    if (!node.id) node.id = fallbackId;
+    return node.id;
+  }
+
+  function clearActiveSearchTarget() {
+    if (activeSearchTarget) {
+      activeSearchTarget.classList.remove('search-target-glow');
+      activeSearchTarget = null;
+    }
+    if (activeSearchTargetTimer) {
+      clearTimeout(activeSearchTargetTimer);
+      activeSearchTargetTimer = null;
+    }
+  }
+
+  function scrollAndGlowTarget(target, options = {}) {
+    if (!target) return;
+    const { glow = true, behavior = 'smooth' } = options;
+    clearActiveSearchTarget();
+
+    const topbarHeight = document.querySelector('.topbar')?.offsetHeight || 0;
+    const extraOffset = 24;
+    const targetTop = window.scrollY + target.getBoundingClientRect().top - topbarHeight - extraOffset;
+    window.scrollTo({ top: Math.max(targetTop, 0), behavior });
+    window.getSelection()?.removeAllRanges();
+
+    if (!glow) return;
+    target.classList.remove('search-target-glow');
+    void target.offsetWidth;
+    target.classList.add('search-target-glow');
+
+    activeSearchTarget = target;
+    activeSearchTargetTimer = setTimeout(() => {
+      target.classList.remove('search-target-glow');
+      if (activeSearchTarget === target) activeSearchTarget = null;
+      activeSearchTargetTimer = null;
+    }, 1800);
+  }
+
+  function normalizeCodeReference(text) {
+    return String(text || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\(\s*\)/g, '__EMPTY_CALL__')
+      .replace(/\(\s*\.\.\.\s*\)/g, '(...)')
+      .replace(/\([^)]*\)/g, '(...)')
+      .replace(/__EMPTY_CALL__/g, '()')
+      .toLowerCase();
+  }
+
+  function resolveCodeReferenceTarget(text) {
+    const key = normalizeCodeReference(text);
+    if (!key) return null;
+    const entry = codeReferenceTargets[key];
+    if (!entry) return null;
+
+    const section = document.getElementById(`section-${entry.sectionId}`);
+    if (!section) return null;
+
+    const target = entry.targetSelector
+      ? section.querySelector(entry.targetSelector)
+      : section.querySelector('.page-title, h2, h3');
+
+    return target ? { ...entry, target } : null;
+  }
+
+  function isInlineCodeReferenceCandidate(node) {
+    if (!(node instanceof HTMLElement)) return false;
+    if (node.closest('pre, .method')) return false;
+    if (!node.matches('p code, li code, td code, .callout code, .card-desc code, .page-lead code')) return false;
+
+    const text = normalizeQueryText(node.textContent);
+    if (!text || text.length > 40) return false;
+    if (text.includes('\n')) return false;
+    if ((text.match(/\s+/g) || []).length > 2) return false;
+
+    return Boolean(resolveCodeReferenceTarget(text));
+  }
+
+  function syncModifierNavigationState(event) {
+    document.body.classList.toggle('mod-nav-active', Boolean(event?.ctrlKey || event?.metaKey));
+  }
+
+  function activateInlineCodeReferences() {
+    document.querySelectorAll('code').forEach(node => {
+      if (!isInlineCodeReferenceCandidate(node)) return;
+
+      const targetInfo = resolveCodeReferenceTarget(node.textContent);
+      if (!targetInfo) return;
+
+      node.classList.add('inline-code-ref');
+      node.dataset.sectionId = targetInfo.sectionId;
+      node.dataset.targetId = ensureAnchor(
+        targetInfo.target,
+        `${targetInfo.sectionId}-${slugify(normalizeQueryText(node.textContent)) || 'code-ref'}`
+      );
+      node.title = 'Ctrl/Cmd+Click to open docs section';
+
+      node.addEventListener('click', event => {
+        if (!(event.ctrlKey || event.metaKey)) return;
+        if (event.button !== 0) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const sectionId = node.dataset.sectionId;
+        const target = document.getElementById(node.dataset.targetId);
+        if (!sectionId || !target) return;
+
+        show(sectionId, { scrollTop: false, targetId: node.dataset.targetId, glowTarget: true });
+      });
+    });
+  }
+
+  function buildLocationHash(sectionId, targetId = null) {
+    const params = new URLSearchParams();
+    params.set('section', sectionId);
+    if (targetId) params.set('target', targetId);
+    return `#${params.toString()}`;
+  }
+
+  function normalizeSectionId(sectionId) {
+    return sections[sectionId] ? sectionId : DEFAULT_SECTION_ID;
+  }
+
+  function parseLocationState() {
+    const hash = window.location.hash.replace(/^#/, '').trim();
+    if (!hash) {
+      return { sectionId: DEFAULT_SECTION_ID, targetId: null };
+    }
+
+    if (!hash.includes('=')) {
+      const legacySectionId = hash.replace(/^section-/, '');
+      return { sectionId: normalizeSectionId(legacySectionId), targetId: null };
+    }
+
+    const params = new URLSearchParams(hash);
+    return {
+      sectionId: normalizeSectionId(params.get('section') || DEFAULT_SECTION_ID),
+      targetId: params.get('target') || null,
+    };
+  }
+
+  function getNavigationState(overrides = {}) {
+    const parsed = parseLocationState();
+    return {
+      sectionId: normalizeSectionId(overrides.sectionId ?? history.state?.sectionId ?? parsed.sectionId),
+      targetId: overrides.targetId ?? history.state?.targetId ?? parsed.targetId ?? null,
+      scrollY: overrides.scrollY ?? window.scrollY,
+    };
+  }
+
+  function replaceCurrentHistoryEntry(overrides = {}) {
+    const state = getNavigationState(overrides);
+    history.replaceState(state, '', buildLocationHash(state.sectionId, state.targetId));
+    return state;
+  }
+
+  function isSameLocation(sectionId, targetId) {
+    const state = getNavigationState();
+    return state.sectionId === sectionId && (state.targetId || null) === (targetId || null);
+  }
+
+  function renderSection(id, options = {}) {
+    const { scrollTop = true } = options;
+
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+    const section = document.getElementById('section-' + id);
+    if (section) section.classList.add('active');
+
+    document.querySelectorAll('.nav-link').forEach(l => {
+      if (l.getAttribute('onclick') === `show('${id}')`) {
+        l.classList.add('active');
+      }
+    });
+
+    const meta = sections[id];
+    if (meta) {
+      document.getElementById('breadcrumb').innerHTML =
+        `pypercache <span>/</span> ${meta.crumb} <span>/</span> ${meta.label}`;
+    }
+
+    document.getElementById('sidebar').classList.remove('open');
+
+    if (scrollTop) window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  function finalizeNavigationTarget(targetId, options = {}) {
+    if (!targetId) return;
+    const { glow = true, behavior = 'smooth' } = options;
+    setTimeout(() => {
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      scrollAndGlowTarget(target, { glow, behavior });
+    }, 30);
+  }
+
+  function navigateTo(id, options = {}) {
+    const {
+      scrollTop = true,
+      targetId = null,
+      glowTarget = false,
+      historyMode = 'push',
+      restoreScrollY = null,
+    } = options;
+
+    const sectionId = normalizeSectionId(id);
+    const normalizedTargetId = targetId || null;
+
+    renderSection(sectionId, { scrollTop: scrollTop && !normalizedTargetId && restoreScrollY == null });
+
+    if (historyMode === 'push') {
+      if (!isSameLocation(sectionId, normalizedTargetId)) {
+        replaceCurrentHistoryEntry();
+        history.pushState({
+          sectionId,
+          targetId: normalizedTargetId,
+          scrollY: normalizedTargetId ? null : 0,
+        }, '', buildLocationHash(sectionId, normalizedTargetId));
+      } else {
+        replaceCurrentHistoryEntry({
+          sectionId,
+          targetId: normalizedTargetId,
+          scrollY: restoreScrollY ?? (normalizedTargetId ? null : window.scrollY),
+        });
+      }
+    } else if (historyMode === 'replace') {
+      replaceCurrentHistoryEntry({
+        sectionId,
+        targetId: normalizedTargetId,
+        scrollY: restoreScrollY ?? (normalizedTargetId ? null : 0),
+      });
+    }
+
+    if (normalizedTargetId) {
+      finalizeNavigationTarget(normalizedTargetId, {
+        glow: glowTarget,
+        behavior: historyMode === 'pop' ? 'auto' : 'smooth',
+      });
+      return;
+    }
+
+    if (restoreScrollY != null) {
+      window.scrollTo({ top: Math.max(restoreScrollY, 0), behavior: 'auto' });
+      return;
+    }
+
+    if (scrollTop) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }
+
+  function resultTitle(result) {
+    if (!result) return '';
+    if (result.heading === 'Overview' || result.heading === result.sectionTitle) {
+      return result.sectionTitle;
+    }
+    return `${result.sectionTitle} — ${result.heading}`;
+  }
+
+  function resultPath(result) {
+    if (!result) return '';
+    if (result.heading === 'Overview' || result.heading === result.sectionTitle) {
+      return result.sectionTitle;
+    }
+    return `${result.sectionTitle} / ${result.heading}`;
+  }
+
+  function makeChunk({ id, sectionId, sectionTitle, heading, anchorId, targetId, text, sourceType, ordinal }) {
+    const normalizedText = normalize(text);
+    const tokenSet = new Set(tokenize(text));
+    const trigramSet = buildTrigrams(text);
+    return {
+      id,
+      sectionId,
+      sectionTitle,
+      heading,
+      anchorId,
+      targetId,
+      text,
+      normalizedText,
+      tokenSet,
+      trigramSet,
+      sourceType,
+      ordinal,
+      path: resultPath({ sectionTitle, heading }),
+    };
+  }
+
+  function scoreClassicQuery(query) {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    const rawTokens = tokenize(trimmed);
+    const expandedTokens = expandQueryTokens(trimmed);
+    const queryTrigrams = buildTrigrams(trimmed);
+
+    return searchState.chunks
+      .map(chunk => {
+        let exactScore = 0;
+        let fuzzyScore = 0;
+        let semanticScore = 0;
+        let headingScore = 0;
+        let titleScore = 0;
+        let matchedTerms = [];
+
+        rawTokens.forEach(token => {
+          if (chunk.normalizedText.includes(token)) {
+            exactScore += 12;
+            matchedTerms.push(token);
+          }
+          if (chunk.heading.toLowerCase().includes(token)) headingScore += 14;
+          if (chunk.sectionTitle.toLowerCase().includes(token)) titleScore += 8;
+        });
+
+        expandedTokens.forEach(token => {
+          if (chunk.tokenSet.has(token)) {
+            semanticScore += rawTokens.includes(token) ? 8 : 3.5;
+            matchedTerms.push(token);
+          } else if (chunk.normalizedText.includes(token)) {
+            semanticScore += rawTokens.includes(token) ? 6 : 2.5;
+            matchedTerms.push(token);
+          }
+        });
+
+        fuzzyScore = jaccard(queryTrigrams, chunk.trigramSet) * 30;
+
+        if (chunk.sourceType === 'hero') semanticScore += 4;
+        if (chunk.sourceType === 'pre' && rawTokens.some(token => chunk.normalizedText.includes(token))) semanticScore += 2;
+
+        const total = exactScore + fuzzyScore + semanticScore + headingScore + titleScore;
+        return {
+          ...chunk,
+          score: total,
+          matchedTerms: unique(matchedTerms).slice(0, 6),
+        };
+      })
+      .filter(result => result.score >= 8)
+      .sort((a, b) => b.score - a.score || a.ordinal - b.ordinal)
+      .slice(0, 12);
+  }
+  function searchDocs(query) {
+    return Promise.resolve(scoreClassicQuery(query));
+  }
+
+  function escapeRegex(text) {
+    return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function normalizeQueryText(text) {
+    return String(text || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function collectSearchRanges(text, query) {
+    const raw = normalizeQueryText(text);
+    const queryText = normalizeQueryText(query);
+    if (!raw || !queryText) return [];
+
+    const phraseTokens = tokenize(queryText);
+    if (phraseTokens.length) {
+      const phrasePattern = phraseTokens.map(token => escapeRegex(token)).join('[^a-z0-9_@.\\-]+');
+      const phraseRegex = new RegExp(phrasePattern, 'i');
+      const phraseMatch = phraseRegex.exec(raw);
+      if (phraseMatch) {
+        return [{
+          start: phraseMatch.index,
+          end: phraseMatch.index + phraseMatch[0].length,
+          weight: phraseMatch[0].length + 200,
+        }];
+      }
+    }
+
+    const terms = unique([
+      ...tokenize(queryText),
+      ...expandQueryTokens(queryText),
+    ])
+      .filter(term => term.length > 2)
+      .sort((a, b) => b.length - a.length);
+
+    const lower = raw.toLowerCase();
+    const hits = [];
+
+    terms.forEach(term => {
+      const needle = term.toLowerCase();
+      let offset = 0;
+      while (offset < lower.length) {
+        const index = lower.indexOf(needle, offset);
+        if (index === -1) break;
+        hits.push({ start: index, end: index + needle.length, weight: needle.length });
+        offset = index + needle.length;
+      }
+    });
+
+    if (!hits.length) return [];
+
+    hits.sort((a, b) => a.start - b.start || b.end - a.end);
+    const merged = [];
+
+    hits.forEach(hit => {
+      const previous = merged[merged.length - 1];
+      if (!previous) {
+        merged.push({ ...hit });
+        return;
+      }
+
+      if (hit.start <= previous.end + 18) {
+        previous.end = Math.max(previous.end, hit.end);
+        previous.weight += hit.weight;
+        return;
+      }
+
+      merged.push({ ...hit });
+    });
+
+    return merged;
+  }
+
+  function bestSearchRange(text, query) {
+    const ranges = collectSearchRanges(text, query);
+    if (!ranges.length) return null;
+    return ranges.slice().sort((a, b) => b.weight - a.weight || a.start - b.start)[0];
+  }
+
+  function renderSearchHighlight(text, query) {
+    const raw = normalizeQueryText(text);
+    const ranges = collectSearchRanges(raw, query);
+    if (!ranges.length) return escapeHtml(raw);
+
+    let cursor = 0;
+    let html = '';
+    ranges.forEach(range => {
+      if (range.start > cursor) {
+        html += escapeHtml(raw.slice(cursor, range.start));
+      }
+      html += `<mark class="search-hit">${escapeHtml(raw.slice(range.start, range.end))}</mark>`;
+      cursor = range.end;
+    });
+    if (cursor < raw.length) {
+      html += escapeHtml(raw.slice(cursor));
+    }
+    return html;
+  }
+
+  function snippetFor(result, query) {
+    const raw = normalizeQueryText(result.text);
+    const bestRange = bestSearchRange(raw, query);
+    const startIndex = bestRange ? bestRange.start : 0;
+    const hitLength = bestRange ? Math.max(bestRange.end - bestRange.start, 0) : 0;
+    const start = Math.max(0, startIndex - 70);
+    const end = Math.min(raw.length, startIndex + hitLength + 140);
+    const prefix = start > 0 ? '…' : '';
+    const suffix = end < raw.length ? '…' : '';
+    return `${prefix}${raw.slice(start, end).trim()}${suffix}`;
+  }
+
+  function highlightTerms(text, query) {
+    return renderSearchHighlight(text, query);
+  }
+
+  function renderResultList(query, results, restored = false) {
+    if (!results.length) {
+      return `
+        <div class="search-empty">
+          <strong>No direct match.</strong>
+          Try a broader term like <code>typed</code>, <code>cache</code>, or <code>query</code>.
+        </div>
+      `;
+    }
+
+    return `
+      ${restored ? `
+        <div class="search-empty" style="margin-bottom:16px;">
+          <strong>Restored last search.</strong>
+          Run it again to refresh scores and snippets.
+        </div>
+      ` : ''}
+      ${results.map((result, index) => `
+      <article class="search-result ${index === searchState.activeIndex ? 'active' : ''}" data-result-index="${index}" onclick="activateSearchResult(${index}, true)">
+        <div class="search-result-top">
+          <div class="search-result-path">${escapeHtml(result.path)}</div>
+          <div class="search-result-score">score ${Math.round(result.score)}</div>
+        </div>
+        <div class="search-result-title">${highlightTerms(resultTitle(result), query)}</div>
+        <div class="search-result-preview">${highlightTerms(snippetFor(result, query), query)}</div>
+      </article>
+    `).join('')}
+    `;
+  }
+
+  async function renderSearchResults(query) {
+    const container = document.getElementById('search-results');
+    if (!query.trim()) {
+      searchState.results = [];
+      searchState.activeIndex = -1;
+      container.innerHTML = `
+        <div class="search-empty">
+          <strong>Search the local docs.</strong>
+          Try <code>hydration</code>, <code>ttl</code>, <code>ApiWrapper</code>, or <code>selector</code>.
+        </div>
+      `;
+      document.getElementById('search-status').textContent = `Indexed ${searchState.chunks.length} local chunks`;
+      persistSearchSnapshot();
+      return;
+    }
+
+    const requestId = Symbol('search-request');
+    searchState.lastRequestId = requestId;
+    document.getElementById('search-status').textContent = `Searching "${query}"...`;
+
+    let results = [];
+    try {
+      results = await searchDocs(query);
+    } catch (error) {
+      console.error('Search failed', error);
+      if (searchState.lastRequestId !== requestId) return;
+      searchState.results = [];
+      searchState.activeIndex = -1;
+      document.getElementById('search-status').textContent = 'Search failed to load.';
+      container.innerHTML = `
+        <div class="search-empty">
+          <strong>Search is temporarily unavailable.</strong>
+          Reload the page and try again.
+        </div>
+      `;
+      persistSearchSnapshot();
+      return;
+    }
+
+    if (searchState.lastRequestId !== requestId) return;
+
+    searchState.results = results;
+    searchState.activeIndex = results.length ? 0 : -1;
+
+    document.getElementById('search-status').textContent = results.length
+      ? `${results.length} matches for "${query}"`
+      : `No matches for "${query}"`;
+    container.innerHTML = renderResultList(query, results);
+    persistSearchSnapshot();
+  }
+
+  function handleSearchInput(value) {
+    searchState.query = value;
+    persistSearchSnapshot();
+    renderSearchResults(value);
+  }
+
+  function renderRestoredSearch() {
+    const query = searchState.query;
+    const container = document.getElementById('search-results');
+
+    if (!query.trim() || !searchState.results.length) {
+      renderSearchResults(query);
+      return;
+    }
+
+    searchState.activeIndex = Math.min(Math.max(searchState.activeIndex, 0), searchState.results.length - 1);
+    document.getElementById('search-status').textContent = `Restored ${searchState.results.length} cached matches for "${query}"`;
+    container.innerHTML = renderResultList(query, searchState.results, true);
+  }
+  function activateSearchResult(index, navigate) {
+    if (index < 0 || index >= searchState.results.length) return;
+    searchState.activeIndex = index;
+    document.querySelectorAll('.search-result').forEach((node, nodeIndex) => {
+      node.classList.toggle('active', nodeIndex === index);
+    });
+
+    if (!navigate) return;
+
+    const result = searchState.results[index];
+    const targetId = result.targetId || result.anchorId || null;
+    show(result.sectionId, {
+      scrollTop: !targetId,
+      targetId,
+      glowTarget: Boolean(targetId),
+    });
+    closeSearchModal();
+  }
+
+  function openSearchModal() {
+    const modal = document.getElementById('search-modal');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    const input = document.getElementById('search-input');
+    input.value = searchState.query;
+    input.focus();
+    input.select();
+    renderRestoredSearch();
+  }
+
+  function closeSearchModal() {
+    const modal = document.getElementById('search-modal');
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function show(id, options = {}) {
+    navigateTo(id, options);
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+  }
+
+  document.getElementById('search-modal').addEventListener('click', (event) => {
+    if (event.target.id === 'search-modal') closeSearchModal();
+  });
+
+  document.getElementById('search-input').addEventListener('input', (event) => {
+    handleSearchInput(event.target.value);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    syncModifierNavigationState(event);
+    const modalOpen = document.getElementById('search-modal').classList.contains('open');
+
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      if (modalOpen) closeSearchModal();
+      else openSearchModal();
+      return;
+    }
+
+    if (!modalOpen) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeSearchModal();
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      activateSearchResult(Math.min(searchState.activeIndex + 1, searchState.results.length - 1), false);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      activateSearchResult(Math.max(searchState.activeIndex - 1, 0), false);
+      return;
+    }
+
+    if (event.key === 'Enter' && searchState.activeIndex >= 0) {
+      event.preventDefault();
+      activateSearchResult(searchState.activeIndex, true);
+    }
+  });
+
+  document.addEventListener('keyup', syncModifierNavigationState);
+  window.addEventListener('blur', () => {
+    document.body.classList.remove('mod-nav-active');
+  });
+
+  window.addEventListener('popstate', event => {
+    const fallback = parseLocationState();
+    const state = event.state || {
+      sectionId: fallback.sectionId,
+      targetId: fallback.targetId,
+      scrollY: fallback.targetId ? null : 0,
+    };
+
+    navigateTo(state.sectionId, {
+      scrollTop: !state.targetId && state.scrollY == null,
+      targetId: state.targetId || null,
+      glowTarget: Boolean(state.targetId),
+      historyMode: 'pop',
+      restoreScrollY: typeof state.scrollY === 'number' ? state.scrollY : null,
+    });
+  });
+
+  buildSearchIndex();
+  activateInlineCodeReferences();
+  initializeCopyCodeButtons();
+  restoreSearchSnapshot();
+  document.getElementById('search-input').value = searchState.query;
+  renderRestoredSearch();
+  const initialNavigation = parseLocationState();
+  navigateTo(initialNavigation.sectionId, {
+    scrollTop: !initialNavigation.targetId,
+    targetId: initialNavigation.targetId,
+    glowTarget: Boolean(initialNavigation.targetId),
+    historyMode: 'replace',
+  });
+</script>
+
+</body>
+</html>

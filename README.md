@@ -251,7 +251,7 @@ q.get("hits?role=staff", select_first=True, cast=StaffMember)
 - **Cross-key queries** — `record.query` operates on a single loaded payload. It does not scan multiple records or touch the backend.
 - **Non-ASCII keys** — unquoted non-ASCII key names raise a parse error. Wrap them in double quotes: `'"héros".name'`.
  
-For the complete selector reference see [QUERY.md](QUERY.md).
+For the complete selector reference see [docs/json-injester-users/selector-guide.md](docs/json-injester-users/selector-guide.md).
  
 ---
  
@@ -259,11 +259,12 @@ For the complete selector reference see [QUERY.md](QUERY.md).
  
 | Topic | File |
 |---|---|
-| `Cache`, `CacheRecord`, TTL, typed objects | [CACHE.md](CACHE.md) |
-| `ApiWrapper`, `ApiHTTPError`, `SSEEvent` | [API_WRAPPER.md](pypercache-docs/API_WRAPPER.md) |
-| `@apimodel`, aliases, timestamps | [APIMODEL.md](pypercache-docs/APIMODEL.md) |
-| `JsonInjester` / `record.query` selector syntax | [QUERY.md](QUERY.md) |
-| Storage backends, `RequestLogger`, SQLite internals | [STORAGE.md](STORAGE.md) |
+| Docs hub and user paths | [docs/README.md](docs/README.md) |
+| API wrapper builders | [docs/api-builders/using-api-wrapper.md](docs/api-builders/using-api-wrapper.md) |
+| Lower-level API builders | [docs/api-builders/using-building-blocks.md](docs/api-builders/using-building-blocks.md) |
+| Typed models with `@apimodel` | [docs/api-builders/typed-models.md](docs/api-builders/typed-models.md) |
+| Cache usage and storage backends | [docs/cache-users/README.md](docs/cache-users/README.md) |
+| `JsonInjester` selector syntax | [docs/json-injester-users/selector-guide.md](docs/json-injester-users/selector-guide.md) |
  
 Full docs and examples: https://github.com/BrandonBahret/PyperCache/tree/master/docs
  
