@@ -14,8 +14,7 @@ This module will show how to:
 
 
 from pypercache.api_wrapper import ApiWrapper
-from pypercache.models.apimodel import Alias, Columns, Timestamp, apimodel
-from pypercache.models.lazy import Lazy
+from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
 from pypercache.utils.sentinel import UNSET
 
 from dataclasses import dataclass

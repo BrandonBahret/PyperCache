@@ -5,9 +5,7 @@ from typing import Annotated
 
 import pytest
 
-from pypercache.models.apimodel import apimodel
-from pypercache.models.fields import Alias, Columns, Timestamp
-from pypercache.models.lazy import Lazy
+from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
 from pypercache.models.validation import ApiModelValidationError
 
 

@@ -17,14 +17,15 @@ from unittest.mock import patch
 
 import pytest
 
-from pypercache.models.fields import Alias, Timestamp
-from pypercache.models.lazy import Lazy
 from pypercache.models.lazy_descriptor import LazyDescriptor
 from pypercache.models.apimodel import (
+    Alias,
     ApiModelValidationError,
+    Lazy,
+    Timestamp,
     apimodel,
     _model_eq,
-    _model_repr
+    _model_repr,
 )
 from pypercache.utils import UNSET
 from pypercache.utils.typing_cast import instantiate_type as _real_instantiate_type
@@ -44,6 +45,20 @@ class _FakeRepo:
     @classmethod
     def reset(cls) -> None:
         cls._registry.clear()
+
+
+def test_apimodel_reexports_field_helpers() -> None:
+    from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
+    from pypercache.models.fields import Alias as FieldsAlias
+    from pypercache.models.fields import Columns as FieldsColumns
+    from pypercache.models.fields import Timestamp as FieldsTimestamp
+    from pypercache.models.lazy import Lazy as LazyMarker
+
+    assert Alias is FieldsAlias
+    assert Columns is FieldsColumns
+    assert Lazy is LazyMarker
+    assert Timestamp is FieldsTimestamp
+    assert callable(apimodel)
 
 
 class _FakeJsonInjester:
