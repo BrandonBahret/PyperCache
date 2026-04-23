@@ -21,7 +21,7 @@ def raise_type_mismatch(model: Any, field: str, annotation: Any, value: Any) -> 
     """Raise a consistent validation error for a type mismatch."""
     model_name = model.__name__ if isinstance(model, type) else model.__class__.__name__
     raise ApiModelValidationError(
-        f"{model_name}.{field} expected {annotation!r}, got {type(value).__name__}"
+        f"{model_name}.{field} expected {annotation!r}, got {type(value).__name__} ({value})"
     )
 
 
