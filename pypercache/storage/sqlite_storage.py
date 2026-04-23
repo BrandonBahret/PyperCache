@@ -293,6 +293,7 @@ class SQLiteStorage(StorageMechanism):
         self._dirty_threshold = dirty_threshold
         self._flush_lock = threading.Lock()   # serialises actual DB writes
         self._closed = False
+        self._manual_flush_mode = False
 
         # super().__init__ calls load() which opens the connection and
         # populates self.records with a _BufferedMapping.
@@ -342,9 +343,11 @@ class SQLiteStorage(StorageMechanism):
     # Flush logic
     # ------------------------------------------------------------------
 
-    def _do_flush(self):
+    def _do_flush(self, force: bool = False):
         """Write all dirty records to SQLite in one transaction (one fsync)."""
         if not isinstance(self.records, _BufferedMapping):
+            return
+        if self._manual_flush_mode and not force:
             return
         if self.records.dirty_count == 0 and not self.records._deleted:
             return
@@ -381,15 +384,24 @@ class SQLiteStorage(StorageMechanism):
 
     def flush(self):
         """Public API: force an immediate flush of the dirty buffer."""
-        self._do_flush()
+        self._do_flush(force=True)
+
+    def enable_manual_flush_mode(self):
+        """Disable automatic flushing until ``flush()`` or ``close()`` is called."""
+        self._manual_flush_mode = True
+
+    def disable_manual_flush_mode(self):
+        """Re-enable immediate durability for subsequent writes."""
+        self._manual_flush_mode = False
+        self._do_flush(force=True)
 
     def _maybe_flush(self):
-        """Flush eagerly if the dirty buffer has hit the threshold."""
-        if (
-            isinstance(self.records, _BufferedMapping)
-            and self.records.dirty_count >= self._dirty_threshold
-        ):
-            self._do_flush()
+        """Flush immediately by default, or defer entirely in manual mode."""
+        if not isinstance(self.records, _BufferedMapping):
+            return
+        if self._manual_flush_mode:
+            return
+        self._do_flush(force=True)
 
     # ------------------------------------------------------------------
     # StorageMechanism public API overrides
@@ -400,10 +412,11 @@ class SQLiteStorage(StorageMechanism):
 
         Overrides the base class to skip the synchronous ``save()`` call that
         would otherwise acquire the lock and call ``touch_store()`` on every
-        write.  Persistence is handled lazily by the dirty-buffer flush cycle.
+        write. Persistence now flushes immediately by default and only stays
+        buffered when manual flush mode is enabled.
         """
         self.records[str(key)] = cache_record_dict   # __setitem__ marks dirty
-        self._maybe_flush()                          # flush only if threshold hit
+        self._maybe_flush()
 
     # ------------------------------------------------------------------
     # StorageMechanism abstract hooks
@@ -432,7 +445,7 @@ class SQLiteStorage(StorageMechanism):
         return _BufferedMapping(initial)
 
     def _impl__save(self, cache_records_dict: Dict[str, dict], filepath: Path):
-        """Called by the base class after store_record; threshold-check only."""
+        """Called by the base class after store_record; delegates flush policy."""
         self._maybe_flush()
 
     def _impl__update_record(self, key: str, data: dict):
@@ -448,6 +461,7 @@ class SQLiteStorage(StorageMechanism):
             if col in data:
                 existing[col] = data[col]
         self.records[key] = existing      # __setitem__ marks dirty — no IO
+        self._maybe_flush()
 
     def _impl__erase_everything(self):
         """Clear the in-memory buffer and the on-disk table atomically."""
@@ -472,7 +486,7 @@ class SQLiteStorage(StorageMechanism):
         are not lost when the process exits.
         """
         self._closed = True
-        self._do_flush()             # final flush — nothing left behind
+        self._do_flush(force=True)   # final flush — nothing left behind
         if self._conn:
             self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
             self._conn.close()

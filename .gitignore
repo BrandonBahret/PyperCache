@@ -2,6 +2,7 @@
 test-caches/
 --*.py
 .obsidian
+notes.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

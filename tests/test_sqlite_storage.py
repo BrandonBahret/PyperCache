@@ -197,6 +197,10 @@ class TestSQLiteStorageCorrectness:
         store.flush()
         assert record_count_on_disk(db_path) == 1
 
+    def test_store_persists_immediately_by_default(self, db_path, store):
+        store.store_record("player:1", make_record(data={"score": 99}))
+        assert record_count_on_disk(db_path) == 1
+
     def test_stored_columns_match_schema(self, db_path, store):
         rec = make_record(data={"hello": "world"}, cast=dict)
         store.store_record("k", rec)
@@ -224,6 +228,12 @@ class TestSQLiteStorageCorrectness:
         store.update_record("k", {"data": {"a": 1, "b": 2}})
         result = store.get_record("k")
         assert result.data == {"a": 1, "b": 2}
+
+    def test_update_record_persists_immediately_by_default(self, db_path, store):
+        store.store_record("k", make_record(data={"a": 1}))
+        store.update_record("k", {"data": {"a": 2}})
+        row = read_row_from_disk(db_path, "k")
+        assert row["data"] == {"a": 2}
 
     def test_upsert_overwrites_existing(self, db_path, store):
         store.store_record("k", make_record(data={"v": 1}))
@@ -294,6 +304,22 @@ class TestSQLiteStorageCorrectness:
         count = record_count_on_disk(db_path)
         store.close()
         assert count == 10
+
+    def test_manual_flush_mode_defers_store_until_flush(self, db_path, store):
+        store.enable_manual_flush_mode()
+        store.store_record("k", make_record(data={"value": 1}))
+        assert read_row_from_disk(db_path, "k") is None
+        store.flush()
+        assert read_row_from_disk(db_path, "k")["data"] == {"value": 1}
+
+    def test_manual_flush_mode_defers_update_until_flush(self, db_path, store):
+        store.enable_manual_flush_mode()
+        store.store_record("k", make_record(data={"value": 1}))
+        store.flush()
+        store.update_record("k", {"data": {"value": 2}})
+        assert read_row_from_disk(db_path, "k")["data"] == {"value": 1}
+        store.flush()
+        assert read_row_from_disk(db_path, "k")["data"] == {"value": 2}
 
     def test_write_then_delete_before_flush_leaves_nothing(self, db_path, store):
         store.store_record("k", make_record())

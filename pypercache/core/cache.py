@@ -130,3 +130,21 @@ class Cache:
         close = getattr(self.storage, "close", None)
         if callable(close):
             close()
+
+    def flush(self):
+        """Flush pending writes when the backend supports explicit flushing."""
+        flush = getattr(self.storage, "flush", None)
+        if callable(flush):
+            flush()
+
+    def enable_manual_flush_mode(self):
+        """Opt into deferred writes for backends that support manual flushing."""
+        enable = getattr(self.storage, "enable_manual_flush_mode", None)
+        if callable(enable):
+            enable()
+
+    def disable_manual_flush_mode(self):
+        """Return to immediate-flush writes for backends that support it."""
+        disable = getattr(self.storage, "disable_manual_flush_mode", None)
+        if callable(disable):
+            disable()

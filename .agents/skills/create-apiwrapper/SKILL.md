@@ -1,5 +1,5 @@
 ---
-name: apiwrapper-skill
+name: create-apiwrapper
 description: Build Python API wrappers on top of pypercache from online API documentation. Use when the user asks for `/create-apiwrapper <docs-url>` or otherwise wants Codex to inspect an API's web docs, map its endpoints and payloads, and generate a typed pypercache-based wrapper with models, caching, logging, enums, and follow-up convenience methods.
 ---
 

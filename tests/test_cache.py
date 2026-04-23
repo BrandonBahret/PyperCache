@@ -8,6 +8,7 @@ import pytest
 
 from pypercache import Cache
 from pypercache.storage.backends import JSONStorage, PickleStorage
+from pypercache.storage.sqlite_storage import SQLiteStorage
 from pypercache.utils.patterns import ClassRepository
 from pypercache.utils.sentinel import UNSET
 
@@ -168,6 +169,43 @@ class TestPersistence:
         assert reloaded.has("key")
         assert reloaded.get("key").data == {"survived": True}
 
+    def test_sqlite_store_persists_without_close(self, tmp_path):
+        db_path = str(tmp_path / "cache.db")
+        cache = Cache(filepath=db_path)
+        cache.store("key", {"survived": True})
+        reloaded = Cache(filepath=db_path)
+        assert reloaded.has("key")
+        assert reloaded.get("key").data == {"survived": True}
+        cache.close()
+        reloaded.close()
+
+    def test_sqlite_update_persists_without_close(self, tmp_path):
+        db_path = str(tmp_path / "cache.db")
+        cache = Cache(filepath=db_path)
+        cache.store("key", {"value": 1})
+        cache.update("key", {"value": 2})
+        reloaded = Cache(filepath=db_path)
+        assert reloaded.get("key").data == {"value": 2}
+        cache.close()
+        reloaded.close()
+
+    def test_sqlite_manual_flush_mode_requires_flush(self, tmp_path):
+        db_path = str(tmp_path / "cache.db")
+        cache = Cache(filepath=db_path)
+        cache.enable_manual_flush_mode()
+        cache.store("key", {"survived": False})
+
+        reloaded = Cache(filepath=db_path)
+        assert not reloaded.has("key")
+
+        cache.flush()
+        after_flush = Cache(filepath=db_path)
+        assert after_flush.get("key").data == {"survived": False}
+
+        cache.close()
+        reloaded.close()
+        after_flush.close()
+
 
 # ---------------------------------------------------------------------------
 # Storage backend dispatch
@@ -186,3 +224,8 @@ class TestStorageDispatch:
     def test_unknown_extension_raises(self, tmp_path):
         with pytest.raises(ValueError, match="No storage mechanism"):
             Cache(filepath=str(tmp_path / "store.csv"))
+
+    def test_db_extension_uses_sqlite_storage(self, tmp_path):
+        cache = Cache(filepath=str(tmp_path / "cache.db"))
+        assert isinstance(cache.storage, SQLiteStorage)
+        cache.close()
