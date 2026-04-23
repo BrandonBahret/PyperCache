@@ -38,8 +38,7 @@ At the center is `Cache`, which stores keyed records to disk and returns `CacheR
 ```python
 from pypercache import Cache, RequestLogger
 from pypercache.api_wrapper import ApiWrapper
-from pypercache.models.apimodel import Alias, Columns, Timestamp, apimodel
-from pypercache.models.lazy import Lazy
+from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
 from pypercache.query import JsonInjester
 ```
 

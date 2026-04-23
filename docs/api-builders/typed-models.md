@@ -222,8 +222,7 @@ print(forecast.hourly[0].temperature_2m)
 Use `Lazy[T]` when a field is expensive or large and you do not want to hydrate it until first access.
 
 ```python
-from pypercache.models.lazy import Lazy
-from pypercache.models.apimodel import apimodel
+from pypercache.models.apimodel import Lazy, apimodel
 
 
 @apimodel(validate=True)
@@ -245,8 +244,7 @@ That is exactly what the Open-Meteo example does:
 from datetime import datetime
 from typing import Annotated
 
-from pypercache.models.apimodel import Alias, Columns, Timestamp, apimodel
-from pypercache.models.lazy import Lazy
+from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
 
 
 @apimodel(validate=True)

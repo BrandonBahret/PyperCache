@@ -1191,8 +1191,7 @@ pip install .</code></pre>
 
         <pre data-lang="python"><code><span class="kw">from</span> pypercache <span class="kw">import</span> Cache, RequestLogger
 <span class="kw">from</span> pypercache.api_wrapper <span class="kw">import</span> ApiWrapper
-<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Columns, Timestamp, apimodel
-<span class="kw">from</span> pypercache.models.lazy <span class="kw">import</span> Lazy
+<span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Columns, Lazy, Timestamp, apimodel
 <span class="kw">from</span> pypercache.query <span class="kw">import</span> JsonInjester</code></pre>
 
         <h2>Choose your starting point</h2>
@@ -1750,7 +1749,7 @@ print(forecast.hourly[<span class="num">0</span>].temperature_2m)  <span class="
         <h2>Lazy — deferred hydration</h2>
         <p>Wrap a type in <code>Lazy[T]</code> and it won't be hydrated until first access. Useful for large or expensive nested fields.</p>
 
-        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.lazy <span class="kw">import</span> Lazy
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Lazy, apimodel
 
 <span class="dc">@apimodel</span>(validate=<span class="kw">True</span>)
 <span class="kw">class</span> <span class="cl">User</span>:
@@ -2080,8 +2079,7 @@ print(q.<span class="fn">get</span>(<span class="st">"hits?role=contractor"</spa
           <p class="page-lead">Exact signatures for the decorator and all field helpers.</p>
         </div>
 
-        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Columns, Timestamp, apimodel
-<span class="kw">from</span> pypercache.models.lazy <span class="kw">import</span> Lazy
+        <pre data-lang="python"><code><span class="kw">from</span> pypercache.models.apimodel <span class="kw">import</span> Alias, Columns, Lazy, Timestamp, apimodel
 <span class="kw">from</span> pypercache.models.validation <span class="kw">import</span> ApiModelValidationError</code></pre>
 
         <h2>Decorator</h2>

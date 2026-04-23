@@ -3,8 +3,7 @@
 ## Imports
 
 ```python
-from pypercache.models.apimodel import Alias, Columns, Timestamp, apimodel
-from pypercache.models.lazy import Lazy
+from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
 from pypercache.models.validation import ApiModelValidationError
 ```
 
