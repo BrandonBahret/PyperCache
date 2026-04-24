@@ -3,6 +3,7 @@ test-caches/
 --*.py
 .obsidian
 notes.md
+todo.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
