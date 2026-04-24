@@ -183,7 +183,7 @@ class TestPersistence:
         db_path = str(tmp_path / "cache.db")
         cache = Cache(filepath=db_path)
         cache.store("key", {"value": 1})
-        cache.update("key", {"value": 2})
+        cache.update("key", {"data": {"value": 2}})
         reloaded = Cache(filepath=db_path)
         assert reloaded.get("key").data == {"value": 2}
         cache.close()

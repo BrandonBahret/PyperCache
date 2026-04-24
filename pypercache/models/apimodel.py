@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from typing import Annotated, Any, TypeVar, get_args, get_origin, get_type_hints
+from typing import Annotated, Any, TypeVar, overload, get_args, get_origin, get_type_hints
 
 from ..utils.patterns import ClassRepository
 from ..query.json_injester import JsonInjester
@@ -44,6 +44,7 @@ from .validation import ApiModelValidationError, raise_unset_field, validate_typ
 
 
 T = TypeVar("T")
+ModelT = TypeVar("ModelT", bound=type[Any])
 
 
 __all__ = [
@@ -98,13 +99,34 @@ def _write_raw_value(data: dict, raw_key: str, value: Any) -> None:
     """Write *value* into *data*, respecting dot-separated raw key paths."""
     write_raw_value(data, raw_key, value)
 
+
+@overload
 def apimodel(
-    cls: T | None = None,
+    cls: ModelT,
     *,
     validate: bool = False,
     strict: bool = False,
     _localns: dict[str, Any] | None = None,
-) -> T | Callable[[T], T]:
+) -> ModelT: ...
+
+
+@overload
+def apimodel(
+    cls: None = None,
+    *,
+    validate: bool = False,
+    strict: bool = False,
+    _localns: dict[str, Any] | None = None,
+) -> Callable[[ModelT], ModelT]: ...
+
+
+def apimodel(
+    cls: ModelT | None = None,
+    *,
+    validate: bool = False,
+    strict: bool = False,
+    _localns: dict[str, Any] | None = None,
+) -> ModelT | Callable[[ModelT], ModelT]:
     """Decorator that makes a simple model from annotated fields.
 
     The generated constructor accepts a single positional ``data`` dict.
@@ -119,7 +141,7 @@ def apimodel(
     configure field hydration. ``Alias`` reads a field from another raw key and
     ``Timestamp`` parses raw API timestamps into ``datetime`` fields::
 
-        name:     Lazy[str]                                # plain lazy
+        name:     Lazy[str]    # plain lazy
         customer: Lazy[Annotated[Customer, Alias("cust")]]
         created:  Annotated[datetime, Timestamp()]
     """

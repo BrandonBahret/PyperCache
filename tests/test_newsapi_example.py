@@ -140,6 +140,7 @@ def test_top_headlines_rejects_invalid_param_mix():
         client.close()
 
 
-def test_client_requires_api_key():
+def test_client_requires_api_key(monkeypatch):
+    monkeypatch.delenv("NEWSAPI_API_KEY", raising=False)
     with pytest.raises(ValueError, match="requires an API key"):
         NewsApiClient(api_key=None, cache_path=None)
