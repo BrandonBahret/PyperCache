@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypercache"
-version = "0.1.8"
+version = "0.1.9"
 description = "Durable file-backed caching for JSON-like data with pluggable storage backends"
 readme = "README.md"
 license = "MIT"

@@ -70,10 +70,12 @@ Operational behavior:
 
 - loads all rows into memory on open
 - tracks dirty keys in memory
-- flushes dirty rows in batches
+- flushes `store()` and `update()` writes immediately by default
 - uses WAL mode
-- supports `flush()` and `close()`
+- supports `flush()`, `close()`, `enable_manual_flush_mode()`, and `disable_manual_flush_mode()`
 - supports context manager usage
+
+Manual flush mode is opt-in. When enabled, writes stay buffered in memory until `flush()` or `close()` is called.
 
 If you use `SQLiteStorage` directly, prefer:
 

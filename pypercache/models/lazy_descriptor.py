@@ -44,6 +44,7 @@ class LazyDescriptor:
         columns: Columns | None = None,
         validate: bool = False,
         strict: bool = False,
+        shallow: bool = False,
     ) -> None:
         self.field = field
         self.inner_type = inner_type
@@ -52,6 +53,7 @@ class LazyDescriptor:
         self.columns = columns
         self.validate = validate
         self.strict = strict
+        self.shallow = shallow
 
         # The key used to stash the hydrated value on the instance.
         self._cache_key = f"_lazycache_{field}"

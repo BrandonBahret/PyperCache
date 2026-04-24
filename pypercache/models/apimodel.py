@@ -37,7 +37,7 @@ from .field_transforms import (
     unwrap_lazy_config,
     write_raw_value,
 )
-from .fields import Alias, Columns, Timestamp
+from .fields import Alias, Columns, Shallow, Timestamp
 from .lazy import Lazy
 from .lazy_descriptor import LazyDescriptor
 from .validation import ApiModelValidationError, raise_unset_field, validate_type
@@ -52,6 +52,7 @@ __all__ = [
     "ApiModelValidationError",
     "Columns",
     "Lazy",
+    "Shallow",
     "Timestamp",
     "apimodel",
 ]
@@ -69,13 +70,15 @@ def _model_eq(self: Any, other: Any) -> bool:
     return self.as_dict() == other.as_dict()
 
 
-def _unwrap_field_config(annotation: Any) -> tuple[Any, str | None, Timestamp | None, Columns | None]:
-    """Return ``(base_annotation, raw_key_alias, timestamp_parser)``."""
+def _unwrap_field_config(
+    annotation: Any,
+) -> tuple[Any, str | None, Timestamp | None, Columns | None, bool]:
+    """Return ``(base_annotation, raw_key_alias, timestamp_parser, shallow)``."""
     return unwrap_field_config(annotation)
 
 def _unwrap_lazy_config(
     annotation: Any,
-) -> tuple[Any, str | None, Timestamp | None, Columns | None] | None:
+) -> tuple[Any, str | None, Timestamp | None, Columns | None, bool] | None:
     """If *annotation* is ``Lazy[...]``, return its resolved field config."""
     return unwrap_lazy_config(annotation, Lazy)
 
@@ -187,8 +190,8 @@ def apimodel(
     # Split annotations into eager vs lazy at decoration time -          #
     # this work is done once, not on every instantiation.                #
     # ------------------------------------------------------------------ #
-    eager_fields: dict[str, tuple[Any, str | None, Timestamp | None, Columns | None]] = {}
-    lazy_fields: dict[str, tuple[Any, str | None, Timestamp | None, Columns | None]] = {}
+    eager_fields: dict[str, tuple[Any, str | None, Timestamp | None, Columns | None, bool]] = {}
+    lazy_fields: dict[str, tuple[Any, str | None, Timestamp | None, Columns | None, bool]] = {}
 
     for field, annotation in annotations.items():
         unwrapped = _unwrap_lazy_config(annotation)
@@ -198,7 +201,7 @@ def apimodel(
             eager_fields[field] = _unwrap_field_config(annotation)
 
     # Install one descriptor per lazy field directly on the class.
-    for field, (inner_type, alias, timestamp, columns) in lazy_fields.items():
+    for field, (inner_type, alias, timestamp, columns, shallow) in lazy_fields.items():
         setattr(
             cls,
             field,
@@ -210,6 +213,7 @@ def apimodel(
                 columns=columns,
                 validate=validate,
                 strict=strict,
+                shallow=shallow,
             ),
         )
 
@@ -223,7 +227,7 @@ def apimodel(
         object.__setattr__(self, "_Initial__Data", data)
 
         # Only hydrate eager fields; lazy fields are handled by descriptors.
-        for field, (annotation, alias, timestamp, columns) in eager_fields.items():
+        for field, (annotation, alias, timestamp, columns, _shallow) in eager_fields.items():
             raw_key = field if alias is None else alias
             raw = ji.get(raw_key, default_value=UNSET)
             if strict and raw is UNSET:
@@ -234,7 +238,9 @@ def apimodel(
             object.__setattr__(self, field, value)
 
         if strict or validate:
-            for field, (inner_type, alias, timestamp, columns) in lazy_fields.items():
+            for field, (inner_type, alias, timestamp, columns, shallow) in lazy_fields.items():
+                if shallow:
+                    continue
                 raw_key = field if alias is None else alias
                 raw = ji.get(raw_key, default_value=UNSET)
                 if strict and raw is UNSET:
@@ -266,7 +272,7 @@ def apimodel(
             original_setattr(self, name, value)
             return
 
-        annotation, alias, timestamp, columns = field_config
+        annotation, alias, timestamp, columns, _shallow = field_config
         raw_key = name if alias is None else alias
         assigned = _instantiate_field_value(annotation, value, timestamp, columns)
         if strict and assigned is UNSET:

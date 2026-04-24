@@ -8,7 +8,7 @@ PyperCache is a durable, file-backed cache for JSON-like Python data.
 - **API wrapper base class**: build synchronous `requests` clients with URL joining, optional caching, response decoding, file downloads, SSE parsing, and typed response casting
 - **File-backed storage backends**: choose Pickle, JSON, chunked manifest, or SQLite storage by file extension (`.pkl`, `.json`, `.manifest`, `.db`)
 - **Expiry-aware cache records**: store records with optional TTLs, check freshness, and refetch stale `ApiWrapper` GET/JSON responses instead of serving expired data
-- **Typed API models**: decorate classes with `@apimodel` for dict constructors, nested hydration, raw field aliases, timestamp parsing, lazy fields, and optional validation
+- **Typed API models**: decorate classes with `@apimodel` for dict constructors, nested hydration, raw field aliases, timestamp parsing, lazy fields, shallow lazy validation, and optional validation
 - **JSON navigation**: query loaded dict/list payloads with `JsonInjester` selectors for dotted paths, existence checks, filters, plucks, defaults, and casting
 - **Request logging**: append thread-safe JSONL request records and inspect recent entries by time window
 

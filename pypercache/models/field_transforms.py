@@ -4,23 +4,29 @@ from typing import Annotated, Any, get_args, get_origin
 
 from ..utils.sentinel import UNSET
 from ..utils.typing_cast import instantiate_type as _default_instantiate_type
-from .fields import Alias, Columns, Timestamp
+from .fields import Alias, Columns, Shallow, Timestamp
 from .validation import ApiModelValidationError
 
 
-def unwrap_field_config(annotation: Any) -> tuple[Any, str | None, Timestamp | None, Columns | None]:
-    """Return ``(base_annotation, alias, timestamp, columns)``."""
+def unwrap_field_config(
+    annotation: Any,
+) -> tuple[Any, str | None, Timestamp | None, Columns | None, bool]:
+    """Return ``(base_annotation, alias, timestamp, columns, shallow)``."""
     if get_origin(annotation) is not Annotated:
-        return annotation, None, None, None
+        return annotation, None, None, None, False
 
     args = get_args(annotation)
     alias = next((item.key for item in args[1:] if isinstance(item, Alias)), None)
     timestamp = next((item for item in args[1:] if isinstance(item, Timestamp)), None)
     columns = next((item for item in args[1:] if isinstance(item, Columns)), None)
-    return args[0], alias, timestamp, columns
+    shallow = any(isinstance(item, Shallow) for item in args[1:])
+    return args[0], alias, timestamp, columns, shallow
 
 
-def unwrap_lazy_config(annotation: Any, lazy_type: Any) -> tuple[Any, str | None, Timestamp | None, Columns | None] | None:
+def unwrap_lazy_config(
+    annotation: Any,
+    lazy_type: Any,
+) -> tuple[Any, str | None, Timestamp | None, Columns | None, bool] | None:
     """Return the resolved field config for ``Lazy[...]`` annotations."""
     if get_origin(annotation) is not lazy_type:
         return None

@@ -39,6 +39,20 @@ class Columns:
         return f"Columns(required={self.required!r})"
 
 
+class Shallow:
+    """Defer lazy-field strict/validate checks until hydration.
+
+    Use inside ``typing.Annotated`` with ``Lazy[T]`` when you want model
+    construction to validate eager fields immediately but leave this lazy
+    field unchecked until first access::
+
+        profile: Lazy[Annotated[Profile, Shallow()]]
+    """
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return "Shallow()"
+
+
 class Timestamp:
     """Parse raw API timestamps into ``datetime`` fields.
 

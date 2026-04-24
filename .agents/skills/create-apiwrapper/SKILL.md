@@ -29,6 +29,8 @@ Build a production-oriented Python API wrapper on top of `pypercache`.
    - missing aliases
    - timestamp parsing
    - strict or validate settings
+        note: `validate=True` hydrates `Lazy[...]` fields so nested structures can be validated, but once enabled that hydration propagates down the payload and the lazy branches are no longer lazy in practice. When models use Lazy[...] and you want
+        to add validation use `Lazy[Annotated[T, Shallow()]]` so that that field stays lazy at validation time.
    - lazy-loading opportunities
    - column-oriented payloads that should use `Columns`
    - convenience methods that improve developer ergonomics

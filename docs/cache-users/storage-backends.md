@@ -68,16 +68,17 @@ Use it when:
 
 - writes happen regularly
 - cache size may grow
-- you want WAL mode and batched flushes
+- you want WAL mode without repeated full-file rewrites
 - you care about avoiding repeated full-file rewrites
 
 Important behavior:
 
 - records are loaded into memory on open
-- writes are buffered and flushed in batches
-- a crash can lose the last few seconds of writes unless you flush or close cleanly
+- `Cache.store()` and `Cache.update()` flush immediately by default
+- manual flush mode is optional and must be enabled explicitly
+- when manual flush mode is enabled, SQLite writes do not reach disk until you call `flush()` or `close()`
 
-If you use SQLite directly or through `Cache`, call `close()` when you are done so buffered writes are flushed.
+If you use SQLite directly or through `Cache`, call `close()` when you are done. In the default mode this mainly closes the connection cleanly; in manual flush mode it also flushes pending writes.
 
 ## Same cache semantics across backends
 

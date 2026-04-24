@@ -22,7 +22,7 @@ The core workflow is simple: store a payload by key, check whether it is still f
 - `cache.get(key)` returns a `CacheRecord`, not just the raw payload.
 - `cache.get_object(key)` returns a typed object only if you stored the record with `cast=...`.
 - `RequestLogger` is separate from `Cache`. Use it only if you want request audit logs.
-- `cache.close()` is safe to call on every backend and matters most for SQLite, where it flushes pending writes.
+- `cache.close()` is safe to call on every backend and matters most for SQLite when manual flush mode is enabled, because that is when pending writes may still be in memory.
 
 ## Smallest useful example
 

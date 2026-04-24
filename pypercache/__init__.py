@@ -16,7 +16,7 @@ from .core.cache import Cache
 from .core.cache_record import CacheRecord
 from .core.request_logger import LogRecord, RequestLogger
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 __all__ = [
     "ApiHTTPError",

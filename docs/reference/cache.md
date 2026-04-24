@@ -37,6 +37,7 @@ cache.store(key, data, expiry=math.inf, cast=None)
 
 - creates or overwrites a record
 - stores cast metadata when `cast` is provided
+- flushes immediately by default for SQLite-backed caches
 
 #### `get`
 
@@ -82,6 +83,31 @@ cache.update(key, data)
 - replaces the payload
 - refreshes the timestamp
 - preserves expiry and cast metadata
+- flushes immediately by default for SQLite-backed caches
+
+#### `flush`
+
+```python
+cache.flush()
+```
+
+For backends that support explicit flushing, forces pending writes to disk. This matters most for SQLite when manual flush mode is enabled.
+
+#### `enable_manual_flush_mode`
+
+```python
+cache.enable_manual_flush_mode()
+```
+
+Opts into deferred writes for backends that support it. For SQLite, subsequent writes stay in memory until `flush()` or `close()` is called.
+
+#### `disable_manual_flush_mode`
+
+```python
+cache.disable_manual_flush_mode()
+```
+
+Returns to immediate-flush writes for backends that support it. For SQLite, disabling manual flush mode also flushes any currently pending writes.
 
 #### `completely_erase_cache`
 

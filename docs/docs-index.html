@@ -1025,7 +1025,7 @@
     <div class="logo">
       <div class="logo-name">
         PyperCache
-        <span class="logo-pill">v0.1.8</span>
+        <span class="logo-pill">v0.1.9</span>
       </div>
       <div class="logo-tagline">Durable cache for JSON-like data</div>
     </div>
@@ -1316,7 +1316,7 @@ todo = client.<span class="fn">get_todo</span>(<span class="num">1</span>)</code
 
         <h2>What to copy into your own project</h2>
         <p>If you are starting a real client, the practical pattern is straightforward: model the responses you care about, subclass <code>ApiWrapper</code>, make each endpoint method one call to <code>request()</code>, and let the cache cover repeatable <code>GET</code> traffic. Add custom headers in <code>get_session()</code> only when the API requires them.</p>
-        <p>When the process exits, call <code>client.close()</code>. That closes the wrapper's cache and flushes pending writes for backends such as SQLite when they are in use.</p>
+        <p>When the process exits, call <code>client.close()</code>. That closes the wrapper's cache cleanly. For SQLite-backed caches, it also flushes pending writes if manual flush mode was enabled.</p>
       </div>
 
       <div class="section" id="section-cache-basics">
@@ -1384,7 +1384,7 @@ print(user.name)  <span class="cm"># "Ada"</span>
 
 cache.<span class="fn">close</span>()</code></pre>
 
-        <div class="callout info"><strong>Tip:</strong> Always call <code>cache.close()</code> when using SQLite (<code>.db</code>) to flush pending writes. It's a no-op for other backends, so it's safe to call regardless.</div>
+        <div class="callout info"><strong>Tip:</strong> Always call <code>cache.close()</code> when using SQLite (<code>.db</code>). In the default mode writes are already flushed on <code>store()</code> and <code>update()</code>; in manual flush mode <code>close()</code> flushes pending writes. It's a no-op for other backends, so it's safe to call regardless.</div>
 
         <h2>Querying the payload inline</h2>
         <p>Every <code>CacheRecord</code> exposes a <code>JsonInjester</code> via <code>.query</code>, so you can navigate the stored data without a separate extraction step.</p>
@@ -1454,7 +1454,7 @@ Cache(filepath=<span class="st">"cache.db"</span>)       <span class="cm"># SQLi
         </table>
 
         <h2>SQLite specifics</h2>
-        <p>SQLite loads all rows into memory on open, tracks dirty keys in memory, and flushes in batches. A crash without a clean close can lose the last few seconds of writes. Prefer using it as a context manager:</p>
+        <p>SQLite loads all rows into memory on open and uses WAL mode. For <code>Cache</code>, <code>store()</code> and <code>update()</code> flush immediately by default. Manual flush mode is opt-in; when enabled, writes stay in memory until <code>flush()</code> or <code>close()</code> runs. Prefer using it as a context manager:</p>
 
         <pre data-lang="python"><code><span class="kw">from</span> pypercache.storage <span class="kw">import</span> SQLiteStorage
 
@@ -1962,7 +1962,7 @@ print(q.<span class="fn">get</span>(<span class="st">"hits?role=contractor"</spa
 
         <h4>close</h4>
         <div class="method">cache.<span class="mname">close</span>()</div>
-        <p>Closes the storage backend. Required for SQLite to flush pending writes; no-op for other backends.</p>
+        <p>Closes the storage backend. This matters most for SQLite: it always closes the connection cleanly and flushes pending writes when manual flush mode is enabled. It is a no-op for other backends.</p>
 
         <h4>Cache.cached</h4>
         <div class="method"><span class="dc">@Cache.cached</span></div>
@@ -2174,7 +2174,7 @@ print(q.<span class="fn">get</span>(<span class="st">"hits?role=contractor"</spa
           &nbsp;&nbsp;<span class="mparam">dirty_threshold=50,</span><br>
           )
         </div>
-        <p>Loads all rows into memory on open. Tracks dirty keys and flushes in batches. Uses WAL mode. Supports <code>flush()</code>, <code>close()</code>, and context manager usage.</p>
+        <p>Loads all rows into memory on open. Uses WAL mode. Flushes <code>store()</code> and <code>update()</code> writes immediately by default. Supports <code>flush()</code>, <code>close()</code>, <code>enable_manual_flush_mode()</code>, <code>disable_manual_flush_mode()</code>, and context manager usage. Manual flush mode is opt-in; when enabled, writes stay buffered until <code>flush()</code> or <code>close()</code>.</p>
 
         <hr>
 

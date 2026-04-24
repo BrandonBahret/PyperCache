@@ -22,6 +22,7 @@ from pypercache.models.apimodel import (
     Alias,
     ApiModelValidationError,
     Lazy,
+    Shallow,
     Timestamp,
     apimodel,
     _model_eq,
@@ -48,15 +49,17 @@ class _FakeRepo:
 
 
 def test_apimodel_reexports_field_helpers() -> None:
-    from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
+    from pypercache.models.apimodel import Alias, Columns, Lazy, Shallow, Timestamp, apimodel
     from pypercache.models.fields import Alias as FieldsAlias
     from pypercache.models.fields import Columns as FieldsColumns
+    from pypercache.models.fields import Shallow as FieldsShallow
     from pypercache.models.fields import Timestamp as FieldsTimestamp
     from pypercache.models.lazy import Lazy as LazyMarker
 
     assert Alias is FieldsAlias
     assert Columns is FieldsColumns
     assert Lazy is LazyMarker
+    assert Shallow is FieldsShallow
     assert Timestamp is FieldsTimestamp
     assert callable(apimodel)
 
@@ -706,6 +709,61 @@ class TestLazyBasics:
         assert obj.profile.reputation == 42
         assert calls == []
 
+    def test_validate_true_shallow_lazy_field_waits_until_access(self, monkeypatch):
+        monkeypatch.setattr("pypercache.models.apimodel.instantiate_type", _real_instantiate_type)
+        monkeypatch.setattr("pypercache.models.lazy_descriptor.instantiate_type", _real_instantiate_type)
+
+        @apimodel(validate=True)
+        class Model:
+            eager: int
+            x: Lazy[Annotated[int, Shallow()]]
+
+        obj = Model({"eager": "7", "x": "not an int"})
+
+        assert obj.eager == 7
+        assert not hasattr(obj, "_lazycache_x")
+        with pytest.raises(ApiModelValidationError, match="Model\\.x expected"):
+            obj.x
+
+    def test_validate_true_shallow_lazy_field_does_not_snapshot_value_at_init(self, monkeypatch):
+        monkeypatch.setattr("pypercache.models.apimodel.instantiate_type", _real_instantiate_type)
+        monkeypatch.setattr("pypercache.models.lazy_descriptor.instantiate_type", _real_instantiate_type)
+
+        raw = {"x": "7"}
+
+        @apimodel(validate=True)
+        class Model:
+            x: Lazy[Annotated[int, Shallow()]]
+
+        obj = Model(raw)
+        raw["x"] = "9"
+
+        assert obj.x == 9
+
+    def test_strict_true_shallow_lazy_field_waits_until_access(self):
+        @apimodel(strict=True)
+        class Model:
+            x: Lazy[Annotated[int, Shallow()]]
+
+        obj = Model({})
+
+        with pytest.raises(ApiModelValidationError, match="Model\\.x is UNSET"):
+            obj.x
+
+    def test_validate_and_strict_shallow_lazy_field_still_checks_on_access(self, monkeypatch):
+        monkeypatch.setattr("pypercache.models.apimodel.instantiate_type", _real_instantiate_type)
+        monkeypatch.setattr("pypercache.models.lazy_descriptor.instantiate_type", _real_instantiate_type)
+
+        @apimodel(validate=True, strict=True)
+        class Model:
+            eager: int
+            x: Lazy[Annotated[int, Shallow()]]
+
+        obj = Model({"eager": "5", "x": "11"})
+
+        assert obj.eager == 5
+        assert obj.x == 11
+
     def test_lazy_hydrated_exactly_once(self, monkeypatch):
         """_hydrate must be called once; subsequent reads must hit the cache."""
         calls = []
@@ -858,6 +916,14 @@ class TestAlias:
             x: Lazy[Annotated[int, Alias("y")]]
 
         assert Model({"y": "7"}).x == 7
+
+    def test_shallow_marker_on_non_lazy_field_does_not_skip_validation(self):
+        @apimodel(validate=True)
+        class Model:
+            x: Annotated[int, Shallow()]
+
+        with pytest.raises(ApiModelValidationError, match="Model\\.x expected"):
+            Model({"x": "not an int"})
 
     def test_alias_empty_string_is_valid_key(self):
         """An empty-string alias is a valid dict key and must not crash."""

@@ -267,7 +267,31 @@ if not cache.is_data_fresh(key):
 
 ## Close behavior
 
-Call `cache.close()` when you are done, especially for SQLite-backed caches (`.db`) where writes may be buffered. It is safe to call on other backends too.
+Call `cache.close()` when you are done. It is safe to call on every backend. For SQLite-backed caches (`.db`), this always closes the connection cleanly and also flushes any pending writes if you enabled manual flush mode.
+
+## SQLite flush behavior
+
+For SQLite-backed caches:
+
+- `cache.store()` flushes immediately by default
+- `cache.update()` flushes immediately by default
+- manual flush mode is opt-in
+
+If you want to batch SQLite writes manually, enable manual flush mode:
+
+```python
+cache = Cache(filepath="app_cache.db")
+cache.enable_manual_flush_mode()
+
+cache.store("user:1", {"name": "Ada"})
+cache.update("user:1", {"name": "Ada Lovelace"})
+
+# Required in manual flush mode for writes to reach disk.
+cache.flush()
+cache.close()
+```
+
+Use `cache.disable_manual_flush_mode()` to return to immediate-flush writes. While manual flush mode is enabled, SQLite writes stay in memory until `flush()` or `close()` runs.
 
 ## Clear the cache
 
@@ -279,7 +303,7 @@ This removes every record from the underlying store.
 
 ## Closing the cache
 
-For `.pkl`, `.json`, and `.manifest` backends, there is usually nothing special to do. For `.db`, call `cache.close()` before the process exits so pending buffered writes are flushed.
+For `.pkl`, `.json`, and `.manifest` backends, there is usually nothing special to do. For `.db`, call `cache.close()` before the process exits. In the default mode writes are already flushed on each `store()` and `update()`, but in manual flush mode `close()` is one of the operations that makes pending SQLite writes reach disk.
 
 ```python
 cache.close()
