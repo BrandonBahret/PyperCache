@@ -25,6 +25,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 from typing import Annotated, Any, TypeVar, overload, get_args, get_origin, get_type_hints
+import reprlib
 
 from ..utils.patterns import ClassRepository
 from ..query.json_injester import JsonInjester
@@ -58,10 +59,62 @@ __all__ = [
 ]
 
 
-def _model_repr(self: Any) -> str:
-    fields = getattr(self, "__annotations__", {})
-    pairs = ", ".join(f"{name}={getattr(self, name, None)!r}" for name in fields)
-    return f"{self.__class__.__name__}({pairs})"
+_REPR = reprlib.Repr()
+_REPR.maxstring = 80
+_REPR.maxother = 80
+_REPR.maxlist = 6
+_REPR.maxtuple = 6
+_REPR.maxdict = 6
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    if max_chars <= 0:
+        return ""
+
+    if len(text) <= max_chars:
+        return text
+
+    if max_chars <= 3:
+        return "." * max_chars
+
+    return text[: max_chars - 3] + "..."
+
+
+def _model_repr(self: Any, *, max_chars: int = 240) -> str:
+    # Restricts the length of model repr string, and avoids hydrating lazy fields.
+    
+    cls = type(self)
+    fields = getattr(cls, "__annotations__", {})
+    values = object.__getattribute__(self, "__dict__")
+
+    parts: list[str] = []
+    used = len(cls.__name__) + 2  # ClassName(...)
+
+    for name in fields:
+        descriptor = cls.__dict__.get(name)
+        cache_key = getattr(descriptor, "_cache_key", None)
+
+        if name in values:
+            value_repr = _REPR.repr(values[name])
+        elif cache_key is not None and cache_key in values:
+            value_repr = _REPR.repr(values[cache_key])
+        elif cache_key is not None:
+            value_repr = "<lazy>"
+        else:
+            value_repr = "<unset>"
+
+        part = f"{name}={value_repr}"
+
+        # Stop early instead of building a giant repr and truncating afterward.
+        next_used = used + len(part) + (2 if parts else 0)
+        if next_used > max_chars:
+            parts.append("...")
+            break
+
+        parts.append(part)
+        used = next_used
+
+    return _truncate(f"{cls.__name__}({', '.join(parts)})", max_chars)
 
 
 def _model_eq(self: Any, other: Any) -> bool:
