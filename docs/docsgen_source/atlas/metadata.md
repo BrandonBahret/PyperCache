@@ -1,6 +1,6 @@
 ---
 name: PyperCache
-version: v0.1.9
+version: v0.2.0
 tagline: Durable cache for JSON-like data
 accent_dark: "#c8f060"
 accent_light: "hsl(77, 42%, 41%)"
