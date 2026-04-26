@@ -19,7 +19,7 @@ breadcrumb: "pypercache / @apimodel api"
 
 
 ```python
-from pypercache.models.apimodel import Alias, Columns, Lazy, Timestamp, apimodel
+from pypercache.models.apimodel import Alias, Columns, Lazy, Shallow, Timestamp, apimodel
 from pypercache.models.validation import ApiModelValidationError
 ```
 
@@ -72,6 +72,14 @@ Lazy[T]
 :::
 
 Defers hydration of a field until first access. Composes with `Alias{ref=ref-apimodel#alias}`, `Timestamp{ref=ref-apimodel#timestamp}`, and `Columns{ref=ref-apimodel#columns}`.
+
+### Shallow {id=shallow}
+
+:::method
+Shallow()
+:::
+
+Use with `Lazy[Annotated[T, Shallow()]]` to defer `validate=True` / `strict=True` checks for that lazy field until it is accessed. Other model fields keep normal init-time validation.
 
 ## Validation {id=validation}
 

@@ -1822,7 +1822,7 @@ print(forecast.hourly[<span class="num">0</span>].temperature_2m)  <span class="
     profile: <span class="cl">Lazy</span>[<span class="cl">Annotated</span>[<span class="cl">Profile</span>, <span class="cl">Shallow</span>()]]</code></pre>
 
         <p><code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-lazy">Lazy</code> composes with <code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-alias">Alias</code>, <code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-timestamp">Timestamp</code>, and <code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-columns">Columns</code>.</p>
-        <p>Use <code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-shallow">Shallow()</code> with <code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-lazy">Lazy</code> to defer <code>validate=True</code> / <code>strict=True</code> checks for that specific field until it is accessed. Other fields keep normal init-time validation.</p>
+        <p>Use <code class="inline-code-ref" data-section-id="ref-apimodel" data-target-id="ref-apimodel-shallow">Shallow()</code> with <code>Lazy</code> to defer <code>validate=True</code> / <code>strict=True</code> checks for that specific field until it is accessed. Other fields keep normal init-time validation.</p>
       </div>
 
       <!-- ====================================== JSON INJESTER -->

@@ -147,12 +147,15 @@ print(forecast.hourly[0].temperature_2m)  # 21.2
 Wrap a type in `Lazy[T]{ref=ref-apimodel#lazy}` and it won't be hydrated until first access. Useful for large or expensive nested fields.
 
 ```python
-from pypercache.models.apimodel import Lazy, apimodel
+from typing import Annotated
+from pypercache.models.apimodel import Lazy, Shallow, apimodel
 
 @apimodel(validate=True)
 class User:
     id: int
-    profile: Lazy[Profile]
+    profile: Lazy[Annotated[Profile, Shallow()]]
 ```
 
 `Lazy{ref=ref-apimodel#lazy}` composes with `Alias{ref=ref-apimodel#alias}`, `Timestamp{ref=ref-apimodel#timestamp}`, and `Columns{ref=ref-apimodel#columns}`.
+
+Use `Shallow(){ref=ref-apimodel#shallow}` with `Lazy` to defer `validate=True` / `strict=True` checks for that specific field until it is accessed. Other fields keep normal init-time validation.
